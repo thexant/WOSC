@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wasabi Orbital Social Club Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Elite Dangerous Color Palette */
+        :root {
+            --ed-orange: #ff7100;
+            --ed-orange-dim: rgba(255, 113, 0, 0.15);
+            --ed-orange-glow: rgba(255, 113, 0, 0.4);
+            --ed-cyan: #00e5ff;
+            --ed-cyan-dim: rgba(0, 229, 255, 0.1);
+            --bg-dark: #050505;
+            --panel-bg: rgba(10, 8, 5, 0.85);
+            --text-light: #f4f4f4;
+            --danger: #ff3333;
+            --success: #00ff44;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--ed-orange);
+            font-family: 'Rajdhani', sans-serif;
+            text-transform: uppercase;
+            min-height: 100vh;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            background-image: radial-gradient(circle at center, #110d0a 0%, #000000 100%);
+        }
+
+        /* Subtle CRT Scanlines */
+        .scanlines {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.08) 50%);
+            background-size: 100% 4px; z-index: 100; pointer-events: none;
+        }
+
+        .container { max-width: 1100px; width: 100%; z-index: 1; }
+
+        /* Top Header */
+        .header {
+            border-bottom: 2px solid var(--ed-orange); margin-bottom: 2rem; padding-bottom: 1rem;
+            display: flex; justify-content: space-between; align-items: flex-end;
+            box-shadow: 0 4px 10px -4px var(--ed-orange-glow);
+        }
+        .header h1 { font-size: 2.2rem; letter-spacing: 2px; text-shadow: 0 0 8px var(--ed-orange-glow); color: var(--ed-orange); }
+        .header-sub { color: var(--ed-cyan); font-weight: 600; letter-spacing: 1px; text-shadow: 0 0 5px var(--ed-cyan-dim); }
+
+				/* Dashboard Grid */
+				.dashboard { display: grid; grid-template-columns: 1.3fr 1fr; gap: 2rem; align-items: start; }
+				.dashboard-col { display: flex; flex-direction: column; gap: 2rem; }
+				@media (max-width: 900px) { .dashboard { grid-template-columns: 1fr; } }
+
+        /* Panels */
+        .panel {
+            background: var(--panel-bg); border: 1px solid var(--ed-orange);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5), inset 0 0 20px var(--ed-orange-dim);
+            position: relative; display: flex; flex-direction: column; height: 100%;
+        }
+        .panel::before, .panel::after { content: ''; position: absolute; width: 10px; height: 10px; border: 2px solid var(--ed-cyan); }
+        .panel::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+        .panel::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+        .panel-header {
+            background: var(--ed-orange-dim); padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid var(--ed-orange); display: flex; justify-content: space-between; align-items: center;
+        }
+        .panel-header h2 { font-size: 1.3rem; letter-spacing: 2px; color: var(--ed-cyan); text-shadow: 0 0 5px var(--ed-cyan-dim); }
+        .panel-content { padding: 1.5rem; flex-grow: 1; }
+
+        /* System Navigation */
+        .sys-nav {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--ed-orange);
+        }
+        .sys-nav button {
+            background: rgba(0, 229, 255, 0.05); border: 1px solid var(--ed-cyan); color: var(--ed-cyan);
+            font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 1rem; padding: 4px 12px;
+            cursor: pointer; text-transform: uppercase; transition: all 0.2s;
+        }
+        .sys-nav button:hover { background: var(--ed-cyan-dim); box-shadow: 0 0 8px var(--ed-cyan-dim); color: #fff; }
+        
+        /* New stacked name styling */
+        .sys-name-container { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .sys-name { font-size: 1.5rem; color: var(--text-light); font-weight: 700; text-align: center; line-height: 1.1; }
+        .sys-subtitle { font-size: 0.85rem; color: var(--ed-cyan); opacity: 0.8; letter-spacing: 1px; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 10px; margin-bottom: 1rem; border-bottom: 1px dashed var(--ed-orange-dim); padding-bottom: 10px; }
+        .tab-btn {
+            background: transparent; border: 1px solid transparent; color: var(--ed-orange);
+            font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 600; cursor: pointer;
+            padding: 5px 10px; opacity: 0.6; transition: all 0.2s; text-transform: uppercase;
+        }
+        .tab-btn:hover { opacity: 1; border-bottom: 1px solid var(--ed-orange); }
+        .tab-btn.active { opacity: 1; color: var(--ed-cyan); border-bottom: 2px solid var(--ed-cyan); text-shadow: 0 0 5px var(--ed-cyan-dim); }
+        
+        .tab-pane { display: none; max-height: 55vh; overflow-y: auto; padding-right: 5px; }
+        .tab-pane.active { display: block; }
+        
+        .tab-pane::-webkit-scrollbar { width: 4px; }
+        .tab-pane::-webkit-scrollbar-track { background: #111; }
+        .tab-pane::-webkit-scrollbar-thumb { background: var(--ed-cyan); }
+
+        /* Factions */
+        .faction-item { background: rgba(0, 0, 0, 0.4); border: 1px solid var(--ed-orange-dim); padding: 10px; margin-bottom: 10px; }
+        .faction-name { color: var(--ed-cyan); font-weight: 600; font-size: 1.1rem; margin-bottom: 5px; display: flex; justify-content: space-between; }
+        .faction-state { font-size: 0.85rem; color: var(--text-light); opacity: 0.8; }
+        .inf-bar-bg { width: 100%; height: 4px; background: #111; margin-top: 8px; }
+        .inf-bar-fill { height: 100%; background: var(--ed-orange); transition: width 1s ease-out; }
+
+        /* Installations (Expandable) */
+        .location-item {
+            background: rgba(0, 0, 0, 0.4); border: 1px solid var(--ed-cyan-dim); border-left: 3px solid var(--ed-cyan);
+            margin-bottom: 8px; transition: all 0.2s;
+        }
+        .loc-header {
+            padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+        }
+        .loc-header:hover { background: rgba(0, 229, 255, 0.05); }
+        .loc-details { display: flex; flex-direction: column; }
+        .loc-name { color: var(--text-light); font-weight: 600; font-size: 1.1rem; }
+        .loc-type { color: var(--ed-cyan); font-size: 0.85rem; opacity: 0.8; }
+        .loc-dist { color: var(--ed-orange); font-size: 0.9rem; font-weight: 600; }
+        
+        .loc-body {
+            display: none; padding: 12px; border-top: 1px dashed var(--ed-cyan-dim); background: rgba(0,0,0,0.6);
+            font-size: 0.9rem;
+        }
+        .loc-body.active { display: block; }
+        
+        .service-tags { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0; }
+        .tag { background: #1a1a1a; border: 1px solid var(--ed-cyan-dim); color: var(--ed-cyan); padding: 2px 6px; font-size: 0.8rem; }
+        
+        .market-grid {
+            display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 5px; margin-top: 10px;
+            border: 1px solid var(--ed-orange-dim); padding: 5px; background: #0a0a0a;
+        }
+        .market-header { color: var(--ed-orange); font-weight: 600; border-bottom: 1px solid #333; padding-bottom: 3px; font-size: 0.8rem; }
+        .market-row { color: var(--text-light); font-size: 0.85rem; padding: 2px 0; border-bottom: 1px solid #1a1a1a; }
+        .market-row:last-child { border-bottom: none; }
+        .market-supply { color: var(--ed-cyan); text-align: right; }
+        .market-demand { color: var(--danger); text-align: right; }
+
+				/* Operation Cards */
+        .op-card { 
+            border-left: 3px solid var(--ed-cyan); 
+            background: rgba(0, 229, 255, 0.05); 
+            padding: 1rem; 
+            margin-bottom: 1rem; 
+            transition: all 0.3s ease;
+        }
+        
+        /* Operation Type Color Coding */
+        .op-card.type-combat { border-left-color: var(--danger); background: rgba(255, 51, 51, 0.05); }
+        .op-card.type-logistics { border-left-color: var(--success); background: rgba(0, 255, 68, 0.05); }
+        .op-card.type-science { border-left-color: var(--ed-cyan); background: rgba(0, 229, 255, 0.05); }
+        .op-card.type-criminal { border-left-color: #b026ff; background: rgba(176, 38, 255, 0.05); }
+        .op-card.type-bgs { border-left-color: var(--ed-orange); background: var(--ed-orange-dim); }
+        .op-card.type-other { border-left-color: #888888; background: rgba(136, 136, 136, 0.05); }
+        
+        .op-header { display: flex; justify-content: space-between; margin-bottom: 0.5rem; align-items: center; }
+        .op-title { color: var(--text-light); font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;}
+        .op-type-tag { font-size: 0.8rem; padding: 2px 6px; border: 1px solid currentColor; opacity: 0.9; font-weight: bold; letter-spacing: 1px;}
+        
+        .op-status { padding: 2px 8px; font-weight: bold; font-size: 0.85rem; color: var(--bg-dark); }
+        
+        .op-desc { color: var(--text-light); font-size: 0.95rem; line-height: 1.4; text-transform: none; opacity: 0.9; }
+        
+        /* Metadata Footer for Directives */
+        .op-meta { 
+            display: flex; flex-wrap: wrap; gap: 15px; margin-top: 12px; padding-top: 10px; 
+            border-top: 1px dashed rgba(255, 255, 255, 0.15); font-size: 0.85rem; 
+        }
+        .op-meta-item { color: var(--text-light); display: flex; gap: 5px; opacity: 0.8; }
+        .op-meta-label { font-weight: 600; }
+        
+        /* Match meta labels to card type */
+        .type-combat .op-meta-label { color: var(--danger); }
+        .type-logistics .op-meta-label { color: var(--success); }
+        .type-science .op-meta-label { color: var(--ed-cyan); }
+        .type-criminal .op-meta-label { color: #b026ff; }
+        .type-bgs .op-meta-label { color: var(--ed-orange); }
+        .type-other .op-meta-label { color: #888888; }
+				
+				
+				/* Operation Progress Bars */
+        .op-progress-container { 
+            margin-top: 15px; 
+            padding-top: 10px; 
+            border-top: 1px dashed rgba(255, 255, 255, 0.15); 
+        }
+        .op-progress-header { 
+            display: flex; 
+            justify-content: space-between; 
+            font-size: 0.85rem; 
+            margin-bottom: 5px; 
+            color: var(--text-light); 
+            font-weight: 600;
+        }
+        .op-progress-bar-bg { 
+            width: 100%; 
+            height: 6px; 
+            background: #111; 
+            border: 1px solid var(--ed-cyan-dim); 
+            position: relative; 
+            overflow: hidden;
+        }
+        .op-progress-bar-fill { 
+            height: 100%; 
+            transition: width 1.5s cubic-bezier(0.1, 0.7, 0.1, 1); 
+        }
+				/* Event Cards */
+				.event-card {
+						border-left: 3px solid var(--ed-orange);
+						background: rgba(255, 113, 0, 0.05);
+						padding: 1rem;
+						margin-bottom: 1rem;
+						transition: all 0.3s ease;
+				}
+
+				.event-card:hover {
+						background: var(--ed-orange-dim);
+				}
+
+				.event-date-row {
+						display: flex;
+						justify-content: space-between;
+						align-items: center;
+						font-size: 0.9rem;
+						margin-bottom: 0.75rem;
+						border-bottom: 1px dashed var(--ed-orange-dim);
+						padding-bottom: 6px;
+				}
+
+				.event-gst {
+						color: var(--ed-orange);
+						font-weight: 700;
+						letter-spacing: 1px;
+				}
+
+				.event-local {
+						color: var(--ed-cyan);
+						opacity: 0.8;
+						font-weight: 600;
+				}
+    </style>
+</head>
+<body>
+    <div class="scanlines"></div>
+    
+    <div class="container">
+				<header class="header">
+            <div>
+                <div id="gst-clock" style="color: var(--text-light); font-weight: 600; font-size: 1rem; letter-spacing: 2px; margin-bottom: 5px; opacity: 0.9;">
+                    SYNCING TIME...
+                </div>
+                <h1>WASABI ORBITAL SOCIAL CLUB</h1>
+                <div class="header-sub">SQUADRON INTERFACE</div>
+            </div>
+            <div style="text-align: right;">
+                <div class="header-sub" style="color: var(--ed-orange);">Welcome, CMDR!</div>
+                </div>
+        </header>
+
+				<main class="dashboard">
+						<div class="dashboard-col">
+								<section class="panel">
+										<div class="panel-header">
+												<h2>SYSTEM DATA</h2>
+												<span>EDSM UPLINK</span>
+										</div>
+										<div class="panel-content">
+												<div id="sys-nav-container"></div>
+												
+												<div class="tabs">
+														<button class="tab-btn active" onclick="switchTab('factions')">FACTIONS</button>
+														<button class="tab-btn" onclick="switchTab('installations')">INSTALLATIONS</button>
+												</div>
+
+												<div id="factions-tab" class="tab-pane active">
+														<p class="loader">ESTABLISHING UPLINK...</p>
+												</div>
+												
+												<div id="installations-tab" class="tab-pane">
+														<p class="loader">WAITING FOR NAV BEACON...</p>
+												</div>
+										</div>
+								</section>
+						</div>
+
+						<div class="dashboard-col">
+								<section class="panel">
+										<div class="panel-header">
+												<h2>SQUADRON OPERATIONS</h2>
+												<span>ONGOING OPS</span>
+										</div>
+										<div class="panel-content">
+												<div class="tabs">
+														<button class="tab-btn active" onclick="switchOpTab('ongoing')">ONGOING OPS</button>
+														<button class="tab-btn" onclick="switchOpTab('archived')">ARCHIVED</button>
+												</div>
+
+												<div id="ongoing-tab" class="tab-pane active">
+														<div id="operations-ongoing-container"></div>
+												</div>
+												
+												<div id="archived-tab" class="tab-pane">
+														<div id="operations-archived-container"></div>
+												</div>
+										</div>
+								</section>
+
+								<section class="panel">
+										<div class="panel-header">
+												<h2>UPCOMING EVENTS</h2>
+												<span>SQUADRON CALENDAR</span>
+										</div>
+										<div class="panel-content">
+												<div id="events-container">
+														<p class="loader">SYNCING CALENDAR...</p>
+												</div>
+										</div>
+								</section>
+						</div>
+				</main>
+    </div>
+
+    <script>
+				// --- CONFIGURATION ---
+        const COLONIZED_SYSTEMS = [
+            { 
+                realName: "Col 285 Sector CL-U b4-1", 
+                nickName: "Wasabi Orbital System" 
+            },
+            { 
+                realName: "Col 285 Sector DL-U b4-1", 
+                nickName: "Traveler's Rest" 
+            }
+        ];
+        let currentSystemIndex = 0;
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSysNav();
+            fetchSystemData();
+            renderOperations();
+						renderEvents();
+        });
+
+				function switchOpTab(tabId) {
+            // Target only the tabs within the directives panel
+            const directivePanel = document.getElementById('ongoing-tab').parentElement;
+            directivePanel.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            directivePanel.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`${tabId}-tab`).classList.add('active');
+        }
+				function switchTab(tabId) {
+						// Target only the tabs within the system data panel
+						const systemPanel = document.getElementById('factions-tab').parentElement;
+						
+						// Remove active class from all buttons and panes in this section
+						systemPanel.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+						systemPanel.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+						
+						// Add active class to the clicked button and the target pane
+						event.target.classList.add('active');
+						document.getElementById(`${tabId}-tab`).classList.add('active');
+				}
+				function renderSysNav() {
+            const sys = COLONIZED_SYSTEMS[currentSystemIndex];
+            const displayName = sys.nickName || sys.realName;
+            const subtitleHtml = sys.nickName ? `<div class="sys-subtitle">${sys.realName}</div>` : '';
+
+            document.getElementById('sys-nav-container').innerHTML = `
+                <div class="sys-nav">
+                    <button onclick="changeSystem(-1)">&#9664; PREV</button>
+                    <div class="sys-name-container">
+                        <div class="sys-name">${displayName}</div>
+                        ${subtitleHtml}
+                    </div>
+                    <button onclick="changeSystem(1)">NEXT &#9654;</button>
+                </div>
+            `;
+        }
+
+        function changeSystem(direction) {
+            currentSystemIndex = (currentSystemIndex + direction + COLONIZED_SYSTEMS.length) % COLONIZED_SYSTEMS.length;
+            renderSysNav();
+            fetchSystemData();
+        }
+
+				async function fetchSystemData() {
+            // Target the realName property for the EDSM API
+            const targetSystem = COLONIZED_SYSTEMS[currentSystemIndex].realName; 
+            
+            const factionsTab = document.getElementById('factions-tab');
+            const installationsTab = document.getElementById('installations-tab');
+            
+            factionsTab.innerHTML = `<p class="loader">PULLING BGS DATA...</p>`;
+            installationsTab.innerHTML = `<p class="loader">SCANNING LOCAL SPACE...</p>`;
+            
+            try {
+                const [factionsRes, stationsRes] = await Promise.all([
+                    fetch(`https://www.edsm.net/api-system-v1/factions?systemName=${encodeURIComponent(targetSystem)}`),
+                    fetch(`https://www.edsm.net/api-system-v1/stations?systemName=${encodeURIComponent(targetSystem)}`)
+                ]);
+
+                if (!factionsRes.ok || !stationsRes.ok) throw new Error("EDSM Network Error");
+                
+                const factionsData = await factionsRes.json();
+                const stationsData = await stationsRes.json();
+                
+                // --- RENDER FACTIONS ---
+                if (factionsData.factions?.length > 0) {
+                    const controlling = factionsData.controllingFaction?.name || "Unknown";
+                    factionsData.factions.sort((a, b) => b.influence - a.influence);
+                    
+                    let fHtml = `<div style="margin-bottom:15px; color:var(--text-light);">CONTROLLING: <span style="color:var(--ed-cyan);">${controlling}</span></div>`;
+                    
+                    factionsData.factions.forEach(faction => {
+                        const inf = (faction.influence * 100).toFixed(1);
+                        const state = faction.state || "None";
+                        const isCtrl = faction.name === controlling;
+                        
+                        fHtml += `
+                            <div class="faction-item" style="${isCtrl ? 'border-color: var(--ed-cyan);' : ''}">
+                                <div class="faction-name"><span>${faction.name}</span><span>${inf}%</span></div>
+                                <div class="faction-state">STATE: <span style="color: ${state==='None' ? '#888' : 'var(--ed-orange)'}">${state}</span></div>
+                                <div class="inf-bar-bg"><div class="inf-bar-fill" style="width: ${inf}%; ${isCtrl ? 'background: var(--ed-cyan);' : ''}"></div></div>
+                            </div>
+                        `;
+                    });
+                    factionsTab.innerHTML = fHtml;
+                } else {
+                    factionsTab.innerHTML = `<div style="opacity:0.6;">No BGS data available.</div>`;
+                }
+
+                // --- RENDER INSTALLATIONS ---
+                if (stationsData.stations?.length > 0) {
+                    stationsData.stations.sort((a, b) => a.distanceToArrival - b.distanceToArrival);
+                    let sHtml = '';
+                    
+                    stationsData.stations.forEach((station, index) => {
+                        const dist = station.distanceToArrival ? station.distanceToArrival.toLocaleString() + ' Ls' : 'Unknown';
+                        
+                        // Build initial hidden body containing static services/economy info
+                        let servicesHtml = station.otherServices ? station.otherServices.map(s => `<span class="tag">${s}</span>`).join('') : '';
+                        let ecoHtml = station.economy ? `<span class="tag" style="color:var(--ed-orange); border-color:var(--ed-orange-dim)">${station.economy}</span>` : '';
+                        
+                        sHtml += `
+                            <div class="location-item">
+                                <div class="loc-header" onclick="toggleLocation('${targetSystem}', '${station.name}', ${index}, ${station.haveMarket})">
+                                    <div class="loc-details">
+                                        <span class="loc-name">${station.name}</span>
+                                        <span class="loc-type">${station.type || 'Unknown Type'}</span>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div class="loc-dist">${dist}</div>
+                                        <div style="font-size: 0.7rem; color: #666;">CLICK FOR INFO</div>
+                                    </div>
+                                </div>
+                                <div class="loc-body" id="loc-body-${index}">
+                                    <div style="color:var(--text-light); font-weight:600; margin-bottom:5px;">FACILITIES</div>
+                                    <div class="service-tags">${ecoHtml} ${servicesHtml || '<span style="opacity:0.5">No explicit services logged.</span>'}</div>
+                                    
+                                    <div id="market-data-${index}" style="margin-top: 15px;">
+                                        </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    installationsTab.innerHTML = sHtml;
+                } else {
+                    installationsTab.innerHTML = `<div style="opacity:0.6;">No installations logged in this system.</div>`;
+                }
+
+            } catch (error) {
+                factionsTab.innerHTML = `<div style="color:var(--danger);">UPLINK FAILED</div>`;
+                installationsTab.innerHTML = `<div style="color:var(--danger);">UPLINK FAILED</div>`;
+            }
+        }
+
+        // --- DYNAMIC MARKET UPLINK ---
+        async function toggleLocation(systemName, stationName, index, hasMarket) {
+            const bodyDiv = document.getElementById(`loc-body-${index}`);
+            const marketContainer = document.getElementById(`market-data-${index}`);
+            
+            // Toggle visibility
+            bodyDiv.classList.toggle('active');
+            
+            // If opening and we haven't fetched market data yet
+            if (bodyDiv.classList.contains('active') && !marketContainer.dataset.loaded) {
+                
+                if (!hasMarket) {
+                    marketContainer.innerHTML = `<div style="color:#888; font-style:italic;">NO COMMODITIES MARKET AT THIS LOCATION.</div>`;
+                    marketContainer.dataset.loaded = "true";
+                    return;
+                }
+
+                marketContainer.innerHTML = `<div class="loader" style="font-size:0.8rem; padding: 5px;">REQUESTING MARKET MANIFEST...</div>`;
+                
+                try {
+                    const res = await fetch(`https://www.edsm.net/api-system-v1/stations/market?systemName=${encodeURIComponent(systemName)}&stationName=${encodeURIComponent(stationName)}`);
+                    const data = await res.json();
+                    
+                    if (data && data.commodities && data.commodities.length > 0) {
+                        // Sort commodities: filter out empty stock/demand, show top 5 highest demand/supply
+                        let relevantItems = data.commodities.filter(c => c.stock > 0 || c.demand > 0);
+                        // Sort by demand (highest first) as an example metric
+                        relevantItems.sort((a, b) => b.demand - a.demand);
+                        
+                        // Limit to top 8 so the UI doesn't blow up
+                        const topItems = relevantItems.slice(0, 8);
+                        
+                        let tableHtml = `
+                            <div style="color:var(--text-light); font-weight:600; margin-bottom:5px; display:flex; justify-content:space-between;">
+                                <span>MARKET MANIFEST</span>
+                                <span style="font-size:0.7rem; color:var(--ed-cyan); opacity:0.7;">TOP 8 RELEVANT COMMODITIES</span>
+                            </div>
+                            <div class="market-grid">
+                                <div class="market-header">COMMODITY</div>
+                                <div class="market-header" style="text-align:right;">SUPPLY</div>
+                                <div class="market-header" style="text-align:right;">DEMAND</div>
+                        `;
+                        
+                        topItems.forEach(item => {
+                            tableHtml += `
+                                <div class="market-row" style="color:var(--ed-orange);">${item.name}</div>
+                                <div class="market-row market-supply">${item.stock > 0 ? item.stock.toLocaleString() : '-'}</div>
+                                <div class="market-row market-demand">${item.demand > 0 ? item.demand.toLocaleString() : '-'}</div>
+                            `;
+                        });
+                        
+                        tableHtml += `</div>`;
+                        marketContainer.innerHTML = tableHtml;
+                    } else {
+                        marketContainer.innerHTML = `<div style="color:#888; font-style:italic;">MARKET DATA OUTDATED OR UNAVAILABLE.</div>`;
+                    }
+                    
+                    marketContainer.dataset.loaded = "true"; // Prevent refetching on every open/close
+
+                } catch (err) {
+                    marketContainer.innerHTML = `<div style="color:var(--danger); font-size:0.85rem;">MARKET UPLINK FAILED.</div>`;
+                }
+            }
+        }
+
+				// ===================================================================
+        // [ SQUADRON DIRECTIVES DATABASE ]
+        // Add new directives to the operationsData array below.
+        // 
+        // AVAILABLE FIELDS:
+        // - title:   (Required) String. The headline of the operation.
+        // - type:    (Required) String. Broad category matching our Discord.
+        //            Valid options:
+        //              "COMBAT"    (Red)    -> Bounty hunting, CZs, Anti-Xeno
+        //              "LOGISTICS" (Green)  -> Mining, hauling, salvage, contracting
+        //              "SCIENCE"   (Cyan)   -> Exploration, exobiology
+        //              "CRIMINAL"  (Purple) -> Piracy, smuggling
+        //              "BGS"       (Orange) -> Faction influence, elections, wars
+        //              "OTHER"     (Grey)   -> Search & Rescue, General
+				// - state:      (Required) String. "ONGOING" or "COMPLETED". Determines which tab it lives in.
+        // - importance: (Required) Number. 1 (Critical), 2 (High), 3 (Routine). Sorts the active list.
+        // - desc:    (Required) String. Detailed instructions for the squadron.
+        // - faction: (Optional) String. Target or allied minor faction.
+        // - location:(Optional) String. Target system, station, or settlement.
+        // - contact: (Optional) String. CMDR managing the operation.
+        // - expires: (Optional) String. Date, time, or server tick reference.
+        //
+        // PROGRESS TRACKING (Optional Object):
+        // Include a 'progress' object to render a live progress bar.
+        // - source:        (Required) String. "edsm_faction" for API tracking, or "manual".
+        // - target:        (Required) Number. The end goal value.
+        // - unit:          (Required) String. The label for the numbers (e.g., "%", "T", " Kills").
+        // - lowerIsBetter: (Required) Boolean. Set to true if driving a number down (e.g., forcing a retreat).
+        // - current:       (Required if manual) Number. Update this manually as the op progresses.
+        // - system:        (Required if edsm) String. The system EDSM should query.
+        // - faction:       (Required if edsm) String. The exact faction name EDSM should look for.
+        // - start:         (Optional) Number. Provide only if you want the bar to measure a specific 
+        //                             delta (e.g., moving from 10% to 5%) instead of absolute progress.
+        // ===================================================================
+
+				const operationsData = [
+						{ 
+                title: "Exiling Kasho Purple Rats", 
+                type: "BGS",
+                state: "ONGOING",
+                importance: 1, // 1 = Critical (Red), 2 = High (Orange), 3 = Routine (Cyan)
+                desc: "Drive the influence of the Kasho Purple Rats to 2.5% or less. Hunt them down openly or take missions from all other factions to lower their influence.",
+                faction: "Kasho Purple Rats",
+                location: "Col 285 Sector CL-U b4-1",
+                contact: "CMDR Vetaso", 
+                progress: {
+                    source: "edsm_faction",
+                    system: "Col 285 Sector CL-U b4-1",
+                    faction: "Kasho Purple Rats",
+                    target: 2.5, 
+                    unit: "%",
+                    lowerIsBetter: true 
+                }
+						},
+				];
+				function renderOperations() {
+            const ongoingContainer = document.getElementById('operations-ongoing-container');
+            const archivedContainer = document.getElementById('operations-archived-container');
+            
+            ongoingContainer.innerHTML = ''; 
+            archivedContainer.innerHTML = '';
+
+            // Sort operations by importance (1 is highest, so ascending order)
+            const sortedOps = [...operationsData].sort((a, b) => a.importance - b.importance);
+            
+            sortedOps.forEach((op, index) => {
+                // Determine Badge Status Color & Text based on Importance
+                let importanceText = 'ROUTINE';
+                let importanceColor = 'var(--ed-cyan)';
+                
+                if (op.importance === 1) {
+                    importanceText = 'CRITICAL';
+                    importanceColor = 'var(--danger)';
+                } else if (op.importance === 2) {
+                    importanceText = 'HIGH';
+                    importanceColor = 'var(--ed-orange)';
+                }
+
+                // If completed, override the badge
+                if (op.state === 'COMPLETED') {
+                    importanceText = 'SECURED';
+                    importanceColor = 'var(--success)';
+                }
+
+                // Format Type Class & Tag Color
+                let opType = op.type ? op.type.toLowerCase() : 'other';
+                let typeClass = `type-${opType}`;
+                let typeTagColor = '#888888';
+                if (opType === 'combat') typeTagColor = 'var(--danger)';
+                else if (opType === 'logistics') typeTagColor = 'var(--success)';
+                else if (opType === 'science') typeTagColor = 'var(--ed-cyan)';
+                else if (opType === 'criminal') typeTagColor = '#b026ff';
+                else if (opType === 'bgs') typeTagColor = 'var(--ed-orange)';
+
+                // Metadata Footer
+                let metaHtml = '';
+                if (op.faction || op.location || op.contact || op.expires) {
+                    metaHtml += `<div class="op-meta">`;
+                    if (op.faction) metaHtml += `<div class="op-meta-item"><span class="op-meta-label">FACTION:</span> ${op.faction}</div>`;
+                    if (op.location) metaHtml += `<div class="op-meta-item"><span class="op-meta-label">LOC:</span> ${op.location}</div>`;
+                    if (op.contact) metaHtml += `<div class="op-meta-item"><span class="op-meta-label">POC:</span> ${op.contact}</div>`;
+                    if (op.expires) metaHtml += `<div class="op-meta-item"><span class="op-meta-label">EXPIRES:</span> ${op.expires}</div>`;
+                    metaHtml += `</div>`;
+                }
+
+                // Progress Bar Placeholder
+                let progressHtml = '';
+                if (op.progress && op.state !== 'COMPLETED') { // Don't show loading bars on completed ops
+                    progressHtml = `<div id="op-prog-${index}" class="op-progress-container">
+                                        <div class="loader" style="font-size: 0.8rem; color: var(--ed-cyan);">CALCULATING PROGRESS...</div>
+                                    </div>`;
+                }
+
+                const cardHtml = `
+                    <div class="op-card ${typeClass}" ${op.state === 'COMPLETED' ? 'style="opacity: 0.7; filter: grayscale(40%);"' : ''}>
+                        <div class="op-header">
+                            <span class="op-title">
+                                <span class="op-type-tag" style="color: ${typeTagColor}; border-color: ${typeTagColor}">${op.type || 'OTHER'}</span>
+                                ${op.title}
+                            </span>
+                            <span class="op-status" style="background: ${importanceColor}; color: var(--bg-dark);">${importanceText}</span>
+                        </div>
+                        <div class="op-desc">${op.desc}</div>
+                        ${metaHtml}
+                        ${progressHtml}
+                    </div>
+                `;
+
+                if (op.state === 'COMPLETED') {
+                    archivedContainer.innerHTML += cardHtml;
+                } else {
+                    ongoingContainer.innerHTML += cardHtml;
+                }
+            });
+
+            // Fire off the progress data fetches after rendering the UI
+            hydrateOperationProgress();
+        }
+
+				// --- PROGRESS DATA UPLINK ---
+        async function hydrateOperationProgress() {
+            // Store operations in an array of promises to run concurrently
+            const progressPromises = operationsData.map(async (op, index) => {
+                if (!op.progress) return;
+                
+                const container = document.getElementById(`op-prog-${index}`);
+                if (!container) return;
+
+                let currentVal = op.progress.current;
+
+                // 1. Fetch from EDSM if configured
+                if (op.progress.source === 'edsm_faction') {
+                    try {
+                        const res = await fetch(`https://www.edsm.net/api-system-v1/factions?systemName=${encodeURIComponent(op.progress.system)}`);
+                        if (!res.ok) throw new Error("Uplink failed");
+                        const data = await res.json();
+                        const faction = data.factions.find(f => f.name === op.progress.faction);
+                        
+                        if (faction) {
+                            currentVal = faction.influence * 100;
+                        } else {
+                            throw new Error("Faction missing in EDSM logs");
+                        }
+                    } catch (err) {
+                        container.innerHTML = `<div style="color: var(--danger); font-size: 0.85rem; padding-top: 10px;">PROGRESS DATA UPLINK FAILED</div>`;
+                        return;
+                    }
+                }
+
+                // 2. Render UI based on tracking type
+                if (currentVal !== null && currentVal !== undefined) {
+                    let target = op.progress.target;
+                    
+                    // Match visual color to operation type
+                    let opType = op.type ? op.type.toLowerCase() : 'other';
+                    let themeColor = 'var(--ed-orange)'; 
+                    if (opType === 'combat') themeColor = 'var(--danger)';
+                    else if (opType === 'logistics') themeColor = 'var(--success)';
+                    else if (opType === 'science') themeColor = 'var(--ed-cyan)';
+                    else if (opType === 'criminal') themeColor = '#b026ff';
+
+                    // TYPE A: Strict Percentage Tracking
+                    // FIX: Ensure 'start' is explicitly a number so it never randomly triggers on null/empty strings
+                    if (typeof op.progress.start === 'number') {
+                        let pct = 0;
+                        let start = op.progress.start;
+                        
+                        if (op.progress.lowerIsBetter) {
+                            let totalDiff = start - target;
+                            let currentDiff = start - currentVal;
+                            pct = (totalDiff === 0) ? 100 : (currentDiff / totalDiff) * 100;
+                        } else {
+                            let totalDiff = target - start;
+                            let currentDiff = currentVal - start;
+                            pct = (totalDiff === 0) ? 100 : (currentDiff / totalDiff) * 100;
+                        }
+
+                        // Clamp percentage between 0 and 100
+                        pct = Math.max(0, Math.min(100, pct));
+
+                        container.innerHTML = `
+                            <div class="op-progress-header">
+                                <span>CURRENT: ${currentVal.toFixed(1)}${op.progress.unit} / TARGET: ${target}${op.progress.unit}</span>
+                                <span>${pct.toFixed(0)}%</span>
+                            </div>
+                            <div class="op-progress-bar-bg">
+                                <div class="op-progress-bar-fill" style="width: ${pct}%; background: ${themeColor};"></div>
+                            </div>
+                        `;
+                    } 
+                    // TYPE B: Threshold Goal Tracking 
+                    // FIX: Replaced "Delta" with actionable visual cues
+                    else {
+                        let isMet = op.progress.lowerIsBetter ? (currentVal <= target) : (currentVal >= target);
+                        let operator = op.progress.lowerIsBetter ? '≤' : '≥';
+                        
+                        let statusText = isMet ? 'CONDITION MET' : 'TRACKING...';
+                        let statusColor = isMet ? 'var(--success)' : themeColor;
+                        
+                        let directionAction = op.progress.lowerIsBetter ? 'REDUCE TO' : 'PUSH TO';
+                        let arrowSymbol = op.progress.lowerIsBetter ? '&#8681;' : '&#8679;';
+
+                        container.innerHTML = `
+                            <div class="op-progress-header" style="color: ${statusColor}; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 3px;">
+                                <span>THRESHOLD SENSOR</span>
+                                <span>${statusText}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); padding: 8px 12px; margin-top: 5px; border-left: 3px solid ${statusColor};">
+                                <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-light);">
+                                    <span style="opacity: 0.5; font-size: 0.75rem; display: block; margin-bottom: -2px;">CURRENT</span>
+                                    ${currentVal.toFixed(1)}${op.progress.unit}
+                                </div>
+                                
+                                <div style="flex-grow: 1; text-align: center; font-size: 0.95rem; font-weight: 700; color: ${statusColor}; opacity: 0.8; letter-spacing: 1px; padding: 0 10px;">
+                                    ${isMet ? '&#10003; SECURED' : `${arrowSymbol} ${directionAction} ${arrowSymbol}`}
+                                </div>
+
+                                <div style="font-size: 1.1rem; font-weight: 700; color: var(--ed-cyan); opacity: 0.9; text-align: right;">
+                                    <span style="opacity: 0.5; font-size: 0.75rem; display: block; margin-bottom: -2px;">TARGET</span>
+                                    ${operator} ${target}${op.progress.unit}
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+            });
+
+            await Promise.all(progressPromises);
+        }
+				
+				
+				// ===================================================================
+        // [ GALACTIC STANDARD TIME (GST) CLOCK ]
+        // ===================================================================
+        function updateGSTClock() {
+            const now = new Date();
+            
+            // Elite Dangerous takes place exactly 1286 years in the future
+            const edYear = now.getUTCFullYear() + 1286; 
+            
+            // Format Month string
+            const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+            const monthStr = months[now.getUTCMonth()];
+            
+            // Pad single digits with leading zeros
+            const day = String(now.getUTCDate()).padStart(2, '0');
+            const hours = String(now.getUTCHours()).padStart(2, '0');
+            const minutes = String(now.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(now.getUTCSeconds()).padStart(2, '0');
+            
+            // Construct the final string (e.g., "30 MAR 3312 // 06:17:13 GST")
+            const timeString = `${day} ${monthStr} ${edYear} // ${hours}:${minutes}:${seconds} GST`;
+            
+            document.getElementById('gst-clock').innerText = timeString;
+        }
+
+        // Initialize clock immediately, then update every 1000ms (1 second)
+        updateGSTClock();
+        setInterval(updateGSTClock, 1000);
+				
+				
+				// ===================================================================
+				// [ SQUADRON EVENTS DATABASE ]
+				// Add new upcoming events to the squadronEvents array below.
+				// The script automatically sorts these chronologically and handles 
+				// time conversions, displaying both in-game Galactic Standard Time (GST) 
+				// and the viewer's local timezone automatically.
+				// 
+				// AVAILABLE FIELDS:
+				// - title:        (Required) String. The headline or name of the event.
+				// - type:         (Required) String. Broad category. Determines the tag color.
+				//                 Recognized keywords:
+				//                   [RED]    -> "PVP", "COMBAT", "AX", "THARGOID", "CZ", "BOUNTY"
+				//                   [GREEN]  -> "MINING", "HAULING", "TRADE", "RESCUE", "LOGISTICS", "SALVAGE"
+				//                   [PURPLE] -> "RACING", "SOCIAL", "MEETUP", "TRAINING", "CQC"
+				//                   [ORANGE] -> "BGS", "ELECTION", "WAR", "EXPANSION"
+				//                   [CYAN]   -> "EXPLORATION", "EXOBIOLOGY", "EXPEDITION", "SCIENCE", "GUARDIAN"
+				//                   (Unrecognized types will default to Cyan)
+				// - utcTimestamp: (Required) String. Standard ISO 8601 UTC date/time string. 
+				//                 Format MUST be: "YYYY-MM-DDTHH:MM:SSZ".
+				// - desc:         (Required) String. Details and instructions for the event.
+				// - location:     (Optional) String. Target system, station, or planetary body.
+				// - requirements: (Optional) String. Specific ship builds, SRVs, or gear needed.
+				// - comms:        (Optional) String. The Discord voice channel or comms frequency.
+				// - duration:     (Optional) String. Estimated length of the event (e.g., "2 Hours").
+				// - contact:      (Optional) String. CMDR managing or hosting the event.
+				// ===================================================================
+
+				const squadronEvents = [
+
+				];
+				function renderEvents() {
+						const container = document.getElementById('events-container');
+						if (!container) return;
+						
+						container.innerHTML = '';
+
+						if (squadronEvents.length === 0) {
+								container.innerHTML = `<div style="opacity:0.6; font-style:italic;">NO UPCOMING EVENTS LOGGED.</div>`;
+								return;
+						}
+
+						// Sort events chronologically
+						const sortedEvents = [...squadronEvents].sort((a, b) => new Date(a.utcTimestamp) - new Date(b.utcTimestamp));
+
+						sortedEvents.forEach(evt => {
+								// Parse the UTC string
+								const eventDate = new Date(evt.utcTimestamp);
+								
+								// --- GST Time Calculation ---
+								const edYear = eventDate.getUTCFullYear() + 1286;
+								const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+								const gstMonth = months[eventDate.getUTCMonth()];
+								const gstDay = String(eventDate.getUTCDate()).padStart(2, '0');
+								const gstHours = String(eventDate.getUTCHours()).padStart(2, '0');
+								const gstMinutes = String(eventDate.getUTCMinutes()).padStart(2, '0');
+								const gstString = `${gstDay} ${gstMonth} ${edYear} // ${gstHours}:${gstMinutes} GST`;
+
+								// --- Local Time Calculation ---
+								// Uses the viewer's browser timezone automatically
+								const localDateOptions = { day: '2-digit', month: 'short', year: 'numeric' };
+								const localTimeOptions = { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' };
+								
+								const localDateStr = eventDate.toLocaleDateString(undefined, localDateOptions).toUpperCase();
+								const localTimeStr = eventDate.toLocaleTimeString(undefined, localTimeOptions).toUpperCase();
+								const localString = `${localDateStr} // ${localTimeStr} LOCAL`;
+
+								// Determine badge color based on expanded types
+								let typeTagColor = 'var(--ed-cyan)'; // Default fallback
+								const evType = evt.type ? evt.type.toUpperCase() : 'OTHER';
+
+								// RED: Combat & Aggressive Actions
+								if (['PVP', 'COMBAT', 'AX', 'THARGOID', 'CZ', 'BOUNTY'].includes(evType)) {
+										typeTagColor = 'var(--danger)'; 
+								} 
+								// GREEN: Logistics, Trade & Rescue
+								else if (['MINING', 'HAULING', 'TRADE', 'RESCUE', 'LOGISTICS', 'SALVAGE'].includes(evType)) {
+										typeTagColor = 'var(--success)'; 
+								} 
+								// PURPLE: Community, Fun & Learning
+								else if (['RACING', 'SOCIAL', 'MEETUP', 'TRAINING', 'CQC'].includes(evType)) {
+										typeTagColor = '#b026ff'; 
+								} 
+								// ORANGE: Political & Faction Work
+								else if (['BGS', 'ELECTION', 'WAR', 'EXPANSION'].includes(evType)) {
+										typeTagColor = 'var(--ed-orange)'; 
+								} 
+								// CYAN: Science & Deep Space
+								else if (['EXPLORATION', 'EXOBIOLOGY', 'EXPEDITION', 'SCIENCE', 'GUARDIAN'].includes(evType)) {
+										typeTagColor = 'var(--ed-cyan)'; 
+								}
+
+								// Build the dynamic metadata footer for the new options
+								let metaHtml = '';
+								if (evt.location || evt.requirements || evt.comms || evt.duration || evt.contact) {
+										metaHtml += `<div class="op-meta" style="margin-top: 12px; border-top: 1px dashed rgba(255, 113, 0, 0.3);">`;
+										if (evt.location) metaHtml += `<div class="op-meta-item"><span class="op-meta-label">LOC:</span> ${evt.location}</div>`;
+										if (evt.requirements) metaHtml += `<div class="op-meta-item"><span class="op-meta-label">REQ:</span> ${evt.requirements}</div>`;
+										if (evt.comms) metaHtml += `<div class="op-meta-item"><span class="op-meta-label">COMMS:</span> ${evt.comms}</div>`;
+										if (evt.duration) metaHtml += `<div class="op-meta-item"><span class="op-meta-label">EST:</span> ${evt.duration}</div>`;
+										if (evt.contact) metaHtml += `<div class="op-meta-item"><span class="op-meta-label">POC:</span> ${evt.contact}</div>`;
+										metaHtml += `</div>`;
+								}
+
+								const cardHtml = `
+										<div class="event-card">
+												<div class="event-date-row">
+														<span class="event-gst">${gstString}</span>
+														<span class="event-local" title="Your Local Time">${localString}</span>
+												</div>
+												<div class="op-header" style="margin-top: 8px;">
+														<span class="op-title" style="font-size: 1.1rem;">
+																<span class="op-type-tag" style="color: ${typeTagColor}; border-color: ${typeTagColor}">${evt.type}</span>
+																${evt.title}
+														</span>
+												</div>
+												<div class="op-desc" style="margin-top: 5px;">${evt.desc}</div>
+												${metaHtml}
+										</div>
+								`;
+								container.innerHTML += cardHtml;
+						});
+				}
+    </script>
+</body>
+</html>
