@@ -250,6 +250,77 @@
 						opacity: 0.8;
 						font-weight: 600;
 				}
+        .ticker-wrap {
+            display: flex;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--ed-orange-dim);
+            border-left: 3px solid var(--ed-orange);
+            margin-bottom: 2rem;
+            overflow: hidden;
+            height: 45px;
+            box-shadow: inset 0 0 15px rgba(255, 113, 0, 0.05);
+        }
+        
+        .ticker-header {
+            background: var(--ed-orange-dim);
+            color: var(--ed-cyan);
+            padding: 0 15px;
+            font-weight: 700;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            letter-spacing: 2px;
+            border-right: 1px solid var(--ed-orange);
+            z-index: 10;
+            text-shadow: 0 0 5px var(--ed-cyan-dim);
+            white-space: nowrap;
+        }
+        
+        .ticker-content {
+            flex-grow: 1;
+            overflow: hidden;
+            height: 100%;
+            position: relative;
+        }
+        
+        .ticker {
+            display: inline-flex;
+            align-items: center;
+            height: 100%;
+            white-space: nowrap;
+            animation: ticker-crawl 35s linear infinite;
+        }
+        
+        
+        .ticker-item {
+            display: inline-flex;
+            align-items: center;
+            font-size: 1.1rem;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+        
+        .ticker-tag {
+            color: var(--ed-orange);
+            border: 1px solid var(--ed-orange);
+            padding: 1px 6px;
+            font-size: 0.8rem;
+            margin-right: 10px;
+            font-weight: 700;
+        }
+        
+        .ticker-separator {
+            color: var(--ed-cyan);
+            opacity: 0.3;
+            margin: 0 3rem;
+            font-weight: bold;
+        }
+
+				@keyframes ticker-crawl {
+						0% { transform: translate3d(0, 0, 0); }
+						100% { transform: translate3d(-50%, 0, 0); } /* Changed from -100% to -50% */
+				}
     </style>
 </head>
 <body>
@@ -268,7 +339,12 @@
                 <div class="header-sub" style="color: var(--ed-orange);">Welcome, CMDR!</div>
                 </div>
         </header>
-
+				<div class="ticker-wrap">
+            <div class="ticker-content">
+                <div class="ticker" id="news-ticker">
+                    </div>
+            </div>
+        </div>
 				<main class="dashboard">
 						<div class="dashboard-col">
 								<section class="panel">
@@ -352,6 +428,7 @@
             fetchSystemData();
             renderOperations();
 						renderEvents();
+						renderNewsTicker();
         });
 
 				function switchOpTab(tabId) {
@@ -488,7 +565,41 @@
                 installationsTab.innerHTML = `<div style="color:var(--danger);">UPLINK FAILED</div>`;
             }
         }
+				// ===================================================================
+        // [ SQUADRON FEED ]
+        // Add scrolling ticker updates here.
+        // - tag:  (Optional) Short category label (e.g., 'ALERT', 'BGS', 'GALNET')
+        // - text: (Required) The news message.
+        // ===================================================================
+        const commsFeed = [
+            { tag: "OPERATION", text: "Operation to exile Kasho Purple Rats is currently underway." },
+            { tag: "COLONIZATION", text: "Continue Colonization of Col 285 Sector DL-U b4-1" },
+            { tag: "NOTICE", text: "Don't fall for any April Fool's Jokes!" }
+        ];
+				
+				function renderNewsTicker() {
+						const tickerContainer = document.getElementById('news-ticker');
+						if (!tickerContainer) return;
 
+						if (commsFeed.length === 0) {
+								tickerContainer.innerHTML = `<div class="ticker-item" style="opacity: 0.5;">NO ACTIVE TRANSMISSIONS</div>`;
+								return;
+						}
+
+						let html = '';
+						commsFeed.forEach((item) => {
+								const tagHtml = item.tag ? `<span class="ticker-tag">${item.tag}</span>` : '';
+								
+								// Always add the separator so the end of the list connects smoothly to the duplicated list
+								const separator = `<span class="ticker-separator">//</span>`; 
+								
+								html += `<div class="ticker-item">${tagHtml}${item.text}${separator}</div>`;
+						});
+
+						// Duplicate the HTML string to allow for a seamless CSS loop
+						tickerContainer.innerHTML = html + html;
+				}
+				
         // --- DYNAMIC MARKET UPLINK ---
         async function toggleLocation(systemName, stationName, index, hasMarket) {
             const bodyDiv = document.getElementById(`loc-body-${index}`);
