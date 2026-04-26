@@ -913,10 +913,8 @@
         // - text: (Required) The news message.
         // ===================================================================
         const commsFeed = [
-            { tag: "OPERATION", text: "Operation to exile Kasho Purple Rats is currently underway." },
-			{ tag: "ALERT", text: "Pause all Colonization operations in Wasabi Orbital System until the Kasho Purple Rats are exiled." },
-            { tag: "COLONIZATION", text: "Continue Colonization of Traveler's Rest System." },
-            { tag: "NOTICE", text: "Don't fall for any April Fool's Jokes!" }
+            { tag: "SUCCESS", text: "The Kasho Purple Rats have been succesfully exiled from Col 285 Sector CL-U b4-1." },
+            { tag: "COLONIZATION", text: "Continue Construction Efforts in our Colonized Systems." },
         ];
 				
 				function renderNewsTicker() {
@@ -1058,7 +1056,7 @@
 						{ 
                 title: "Exiling Kasho Purple Rats", 
                 type: "BGS",
-                state: "ONGOING",
+                state: "ARCHIVED",
                 importance: 1, // 1 = Critical (Red), 2 = High (Orange), 3 = Routine (Cyan)
                 desc: "Drive the influence of the Kasho Purple Rats to 2.5% or less. Hunt them down openly or take missions from all other factions to lower their influence.",
                 faction: "Kasho Purple Rats",
