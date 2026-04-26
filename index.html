@@ -666,12 +666,17 @@
 								
 								// --- RENDER FACTIONS ---
 								if (factionsData.factions?.length > 0) {
-										const controlling = factionsData.controllingFaction?.name || "Unknown";
-										factionsData.factions.sort((a, b) => b.influence - a.influence);
-										
-										let fHtml = `<div style="margin-bottom:15px; color:var(--text-light);">CONTROLLING: <span style="color:var(--ed-cyan);">${controlling}</span></div>`;
-										
-										factionsData.factions.forEach((faction, i) => {
+								    const controlling = factionsData.controllingFaction?.name || "Unknown";
+								    
+								    // Filter out any faction with 0 influence (retreated factions)
+								    const activeFactions = factionsData.factions.filter(f => f.influence > 0);
+								    
+								    activeFactions.sort((a, b) => b.influence - a.influence);
+								    
+								    let fHtml = `<div style="margin-bottom:15px; color:var(--text-light);">CONTROLLING: <span style="color:var(--ed-cyan);">${controlling}</span></div>`;
+								    
+								    // Use 'activeFactions' instead of the raw 'factionsData.factions'
+								    activeFactions.forEach((faction, i) => {
 												const inf = (faction.influence * 100).toFixed(1);
 												const state = faction.state || "None";
 												const isCtrl = faction.name === controlling;
