@@ -101,4 +101,6 @@ const TICKER_ITEMS = [
     // Example — remove or replace:
     // { tag: "ALERT", text: "Conflict detected in Wasabi Orbital System — report to CMDR lead for orders" },
     // { tag: "INFO",  text: "New colonization target under evaluation — stand by for briefing" },
+    { tag: "COLONIZATION", text: "Carry on colonization and construction efforts in our various systems."},
+    { tag: "SHIP", text: "The Lynx Highliner is now available for purchase at shipyards."},
 ];
