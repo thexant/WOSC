@@ -308,7 +308,7 @@
         </nav>
 
         <div class="ticker-wrap">
-            <div class="ticker-header">&#9670; INTEL</div>
+            <div class="ticker-header">NEWS</div>
             <div class="ticker-content">
                 <div class="ticker" id="news-ticker"></div>
             </div>
@@ -659,9 +659,12 @@
             archivedContainer.innerHTML = '';
 
             const isArchived = op => op.state === 'COMPLETED' || op.archived === true;
-            const sorted = [...OPERATIONS].sort((a,b) => (a.importance||3) - (b.importance||3));
+            // Preserve original OPERATIONS index so progress div IDs match hydrateOperationProgress
+            const sorted = [...OPERATIONS]
+                .map((op, i) => [op, i])
+                .sort(([a], [b]) => (a.importance||3) - (b.importance||3));
 
-            sorted.forEach((op, index) => {
+            sorted.forEach(([op, index]) => {
                 const type      = (op.type || 'other').toLowerCase();
                 const typeColor = TYPE_COLORS[type] || '#888';
 
@@ -735,8 +738,17 @@
                         return;
                     }
                 }
-
-                if (currentVal == null) return;
+								// Handle manual progress explicitly
+								if (op.progress.source === 'manual') {
+										currentVal = op.progress.current;
+								}
+                if (currentVal == null) {
+									container.innerHTML = `
+											<div style="color:var(--danger);font-size:0.85rem;padding-top:10px;">
+													NO PROGRESS DATA
+											</div>`;
+									return;
+								}
                 const target = op.progress.target;
 
                 if (typeof op.progress.start === 'number') {

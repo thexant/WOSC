@@ -283,6 +283,63 @@
         .expand-btn-market:hover { background: rgba(0,255,68,0.08); }
         .pill-market { color: var(--success); border-color: rgba(0,255,68,0.5); }
         .filter-btn[data-filter="market"].active { color: var(--success); text-shadow: 0 0 8px rgba(0,255,68,0.3); }
+        .filter-btn[data-filter="commodity"].active { color: var(--success); text-shadow: 0 0 8px rgba(0,255,68,0.3); }
+
+        /* ── Commodity Search Panel ──────────────────────────────────── */
+        .commodity-panel {
+            display: none;
+            background: rgba(0,255,68,0.025);
+            border: 1px solid rgba(0,255,68,0.2);
+            border-left: 3px solid rgba(0,255,68,0.5);
+            padding: 10px 16px;
+            margin-bottom: 1rem;
+            gap: 12px 24px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .commodity-panel.open { display: flex; }
+        .comm-field { display: flex; flex-direction: column; gap: 4px; }
+        .comm-label { font-size: 0.63rem; color: var(--success); opacity: 0.65; font-weight: 600; letter-spacing: 2px; }
+        .comm-search {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(0,255,68,0.25);
+            color: var(--text-light);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.88rem; font-weight: 600;
+            padding: 5px 10px;
+            text-transform: uppercase; outline: none; letter-spacing: 1px;
+            width: 220px;
+        }
+        .comm-search:focus { border-color: rgba(0,255,68,0.6); box-shadow: 0 0 6px rgba(0,255,68,0.15); }
+        .comm-search::placeholder { color: #2a2a2a; text-transform: uppercase; }
+        .stock-btns { display: flex; gap: 3px; flex-wrap: wrap; }
+        .stock-btn {
+            background: transparent; border: 1px solid rgba(0,255,68,0.15);
+            color: #444; font-family: 'Rajdhani', sans-serif; font-size: 0.7rem;
+            font-weight: 700; padding: 3px 8px; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 1px; transition: all 0.15s;
+        }
+        .stock-btn:hover { border-color: var(--success); color: var(--success); }
+        .stock-btn.active { border-color: rgba(0,255,68,0.5); color: var(--success); background: rgba(0,255,68,0.07); }
+        .scan-btn {
+            background: transparent; border: 1px solid rgba(0,255,68,0.3);
+            color: var(--success); font-family: 'Rajdhani', sans-serif; font-size: 0.75rem;
+            font-weight: 700; padding: 5px 11px; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s; opacity: 0.75;
+        }
+        .scan-btn:hover:not(:disabled) { opacity: 1; background: rgba(0,255,68,0.08); }
+        .scan-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .comm-close {
+            background: transparent; border: 1px solid rgba(255,255,255,0.08);
+            color: #444; font-family: 'Rajdhani', sans-serif; font-size: 0.72rem;
+            font-weight: 700; padding: 5px 9px; cursor: pointer; letter-spacing: 1px; transition: all 0.15s;
+        }
+        .comm-close:hover { border-color: var(--danger); color: var(--danger); }
+        .comm-status { font-size: 0.68rem; color: var(--ed-orange); opacity: 0.55; letter-spacing: 1px; align-self: center; }
+        /* Cards with unloaded markets when commodity filter is active */
+        .card-unscanned { opacity: 0.4; }
+        /* Cards hidden by the commodity filter */
+        .entry-card.comm-hidden { display: none; }
 
         /* ── Banner Controls ─────────────────────────────────────────────── */
         .ctrl-section { display: flex; flex-direction: column; gap: 10px; flex-grow: 1; min-width: 260px; }
