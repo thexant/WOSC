@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Neighborhood // WOSC Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ed-orange:      #ff7100;
+            --ed-orange-dim:  rgba(255,113,0,0.15);
+            --ed-orange-glow: rgba(255,113,0,0.4);
+            --ed-cyan:        #00e5ff;
+            --ed-cyan-dim:    rgba(0,229,255,0.1);
+            --bg-dark:        #050505;
+            --panel-bg:       rgba(10,8,5,0.9);
+            --text-light:     #f4f4f4;
+            --danger:         #ff3333;
+            --success:        #00ff44;
+            --purple:         #b026ff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--ed-orange);
+            font-family: 'Rajdhani', sans-serif;
+            text-transform: uppercase;
+            min-height: 100vh;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            background-image: radial-gradient(circle at center, #110d0a 0%, #000000 100%);
+        }
+
+        .scanlines {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.08) 50%);
+            background-size: 100% 4px; z-index: 100; pointer-events: none;
+        }
+
+        .container { max-width: 1200px; width: 100%; z-index: 1; }
+
+        /* ── Header ─────────────────────────────────────────────────────── */
+        .header {
+            border-bottom: 2px solid var(--ed-orange); margin-bottom: 1.5rem; padding-bottom: 1rem;
+            display: flex; justify-content: space-between; align-items: flex-end;
+            box-shadow: 0 4px 10px -4px var(--ed-orange-glow);
+        }
+        .header h1 { font-size: 2.2rem; letter-spacing: 2px; text-shadow: 0 0 8px var(--ed-orange-glow); color: var(--ed-orange); }
+        .header-sub { color: var(--ed-cyan); font-weight: 600; letter-spacing: 1px; }
+
+        /* ── Site Navigation ─────────────────────────────────────────────── */
+        .site-nav {
+            display: flex; margin-bottom: 1.5rem;
+            border: 1px solid var(--ed-orange-dim);
+            border-bottom: 2px solid var(--ed-orange);
+            background: rgba(0,0,0,0.5); width: fit-content;
+        }
+        .site-nav a {
+            display: block; padding: 8px 22px; color: var(--ed-orange);
+            text-decoration: none; font-weight: 700; font-size: 1rem; letter-spacing: 2px;
+            opacity: 0.55; border-right: 1px solid var(--ed-orange-dim); transition: all 0.2s;
+        }
+        .site-nav a:last-child { border-right: none; }
+        .site-nav a:hover { opacity: 1; background: var(--ed-orange-dim); }
+        .site-nav a.active {
+            opacity: 1; color: var(--ed-cyan); background: rgba(0,229,255,0.07);
+            text-shadow: 0 0 6px var(--ed-cyan-dim);
+            border-bottom: 2px solid var(--ed-cyan); margin-bottom: -2px;
+        }
+
+        /* ── Home Banner ─────────────────────────────────────────────────── */
+        .home-banner {
+            background: rgba(0,0,0,0.6); border: 1px solid var(--ed-orange);
+            border-left: 4px solid var(--ed-orange); padding: 14px 20px;
+            margin-bottom: 1.5rem; display: flex; justify-content: space-between;
+            align-items: center; flex-wrap: wrap; gap: 10px; position: relative;
+            box-shadow: inset 0 0 30px var(--ed-orange-dim), 0 0 15px rgba(0,0,0,0.5);
+        }
+        .home-banner::before, .home-banner::after { content: ''; position: absolute; width: 10px; height: 10px; border: 2px solid var(--ed-cyan); }
+        .home-banner::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+        .home-banner::after  { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+        .home-label    { font-size: 0.75rem; color: var(--ed-cyan); opacity: 0.7; font-weight: 600; letter-spacing: 2px; margin-bottom: 3px; }
+        .home-sysname  { font-size: 1.5rem; color: var(--text-light); font-weight: 700; letter-spacing: 1px; }
+        .home-badge    { display: inline-block; background: var(--ed-orange-dim); border: 1px solid var(--ed-orange); color: var(--ed-orange); font-size: 0.7rem; font-weight: 700; padding: 1px 8px; letter-spacing: 2px; margin-top: 4px; }
+        .home-meta     { display: flex; gap: 25px; flex-wrap: wrap; }
+        .home-stat     { display: flex; flex-direction: column; align-items: center; }
+        .home-stat-label { font-size: 0.7rem; color: var(--ed-cyan); opacity: 0.65; letter-spacing: 1px; }
+        .home-stat-val   { font-size: 1.1rem; color: var(--ed-orange); font-weight: 700; }
+
+        /* ── Loading State ───────────────────────────────────────────────── */
+        #load-status {
+            background: rgba(0,0,0,0.5); border: 1px solid var(--ed-orange-dim);
+            border-left: 3px solid var(--ed-cyan); padding: 16px 20px; margin-bottom: 1.5rem;
+        }
+        .load-bar-bg { width: 100%; height: 4px; background: #111; border: 1px solid var(--ed-cyan-dim); margin-bottom: 10px; }
+        .load-bar-fill { height: 100%; background: var(--ed-cyan); width: 0%; transition: width 0.5s ease; }
+        #load-text { font-size: 0.9rem; color: var(--ed-cyan); letter-spacing: 1px; }
+        #load-status.done { display: none; }
+
+        /* ── Filter Bar ──────────────────────────────────────────────────── */
+        .filter-bar {
+            display: flex; margin-bottom: 1rem;
+            border-bottom: 1px solid var(--ed-orange-dim); flex-wrap: wrap;
+        }
+        .filter-btn {
+            background: transparent; border: none; border-bottom: 3px solid transparent;
+            color: var(--ed-orange); font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem; font-weight: 700; padding: 8px 18px; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 2px; opacity: 0.5; transition: all 0.2s;
+            margin-bottom: -1px;
+        }
+        .filter-btn:hover { opacity: 0.85; }
+        .filter-btn.active { opacity: 1; border-bottom-color: currentColor; }
+        .filter-btn[data-filter="all"].active        { color: var(--ed-orange); }
+        .filter-btn[data-filter="ships"].active      { color: var(--ed-cyan);   text-shadow: 0 0 8px var(--ed-cyan-dim); }
+        .filter-btn[data-filter="outfitting"].active { color: var(--ed-orange); text-shadow: 0 0 8px var(--ed-orange-glow); }
+        .filter-btn[data-filter="materials"].active  { color: var(--success);   text-shadow: 0 0 8px rgba(0,255,68,0.3); }
+        .filter-btn[data-filter="tech"].active       { color: var(--purple);    text-shadow: 0 0 8px rgba(176,38,255,0.3); }
+        .filter-btn[data-filter="services"].active   { color: #aaa; }
+
+        /* ── Sort bar ────────────────────────────────────────────────────── */
+        .sort-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1rem; font-size: 0.8rem; color: var(--ed-cyan); opacity: 0.6; letter-spacing: 1px;
+        }
+        .entry-count { color: var(--ed-orange); font-weight: 700; opacity: 0.8; }
+
+        /* ── Entries Grid ────────────────────────────────────────────────── */
+        .entries-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.2rem; }
+
+        /* ── Entry Card ──────────────────────────────────────────────────── */
+        .entry-card {
+            background: var(--panel-bg); border: 1px solid;
+            position: relative; display: flex; flex-direction: column; transition: transform 0.15s;
+        }
+        .entry-card:hover { transform: translateY(-1px); }
+        .entry-card::before, .entry-card::after { content: ''; position: absolute; width: 8px; height: 8px; }
+        .entry-card::before { top: -1px; left: -1px; border-top: 2px solid var(--ed-cyan); border-left: 2px solid var(--ed-cyan); }
+        .entry-card::after  { bottom: -1px; right: -1px; border-bottom: 2px solid var(--ed-cyan); border-right: 2px solid var(--ed-cyan); }
+
+        /* Category card theming via .card-{type} on the card element */
+        .card-ships      { border-color: rgba(0,229,255,0.4);    box-shadow: inset 0 0 20px rgba(0,229,255,0.06); }
+        .card-outfitting { border-color: rgba(255,113,0,0.4);    box-shadow: inset 0 0 20px rgba(255,113,0,0.06); }
+        .card-materials  { border-color: rgba(0,255,68,0.35);    box-shadow: inset 0 0 20px rgba(0,255,68,0.06); }
+        .card-tech       { border-color: rgba(176,38,255,0.4);   box-shadow: inset 0 0 20px rgba(176,38,255,0.06); }
+        .card-services   { border-color: rgba(170,170,170,0.25); box-shadow: inset 0 0 20px rgba(170,170,170,0.03); }
+
+        /* Card header */
+        .card-header {
+            padding: 11px 14px 10px; border-bottom: 1px solid;
+            display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+        }
+        .card-ships      .card-header { border-color: rgba(0,229,255,0.2);    background: rgba(0,229,255,0.04); }
+        .card-outfitting .card-header { border-color: rgba(255,113,0,0.2);    background: rgba(255,113,0,0.04); }
+        .card-materials  .card-header { border-color: rgba(0,255,68,0.2);     background: rgba(0,255,68,0.04); }
+        .card-tech       .card-header { border-color: rgba(176,38,255,0.2);   background: rgba(176,38,255,0.04); }
+        .card-services   .card-header { border-color: rgba(170,170,170,0.12); background: rgba(170,170,170,0.02); }
+
+        .card-station-name { font-size: 1.05rem; font-weight: 700; color: var(--text-light); line-height: 1.2; }
+        .card-system-name  { font-size: 0.78rem; color: var(--ed-cyan); opacity: 0.7; margin-top: 3px; letter-spacing: 0.5px; }
+        .card-system-nick  { font-size: 0.82rem; color: var(--ed-orange); opacity: 0.85; margin-top: 1px; font-weight: 600; }
+
+        .card-dist-block { text-align: right; flex-shrink: 0; }
+        .card-dist-val  { font-size: 1.35rem; font-weight: 700; line-height: 1; }
+        .card-ships      .card-dist-val { color: var(--ed-cyan); }
+        .card-outfitting .card-dist-val { color: var(--ed-orange); }
+        .card-materials  .card-dist-val { color: var(--success); }
+        .card-tech       .card-dist-val { color: var(--purple); }
+        .card-services   .card-dist-val { color: #aaa; }
+        .card-dist-unit  { font-size: 0.68rem; opacity: 0.6; letter-spacing: 1px; }
+
+        .card-pad { font-size: 0.68rem; margin-top: 4px; padding: 1px 5px; border: 1px solid; font-weight: 700; letter-spacing: 1px; display: inline-block; }
+        .pad-L { color: var(--success); border-color: rgba(0,255,68,0.4); }
+        .pad-M { color: var(--ed-cyan); border-color: rgba(0,229,255,0.4); }
+        .pad-S { color: #888; border-color: #444; }
+        .pad-U { color: #555; border-color: #333; }
+
+        /* Card meta row */
+        .card-meta {
+            padding: 6px 14px; border-bottom: 1px dashed rgba(255,255,255,0.05);
+            display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.72rem;
+            color: var(--text-light); opacity: 0.5;
+        }
+
+        /* Card body */
+        .card-body { padding: 12px 14px; flex-grow: 1; display: flex; flex-direction: column; gap: 10px; }
+
+        /* Section label */
+        .section-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 2px; margin-bottom: 5px; opacity: 0.7; }
+        .card-ships      .section-label { color: var(--ed-cyan); }
+        .card-outfitting .section-label { color: var(--ed-orange); }
+        .card-materials  .section-label { color: var(--success); }
+        .card-tech       .section-label { color: var(--purple); }
+        .card-services   .section-label { color: #aaa; }
+
+        /* Tags */
+        .tag-row { display: flex; flex-wrap: wrap; gap: 4px; }
+        .tag { font-size: 0.72rem; font-weight: 600; padding: 2px 6px; border: 1px solid; letter-spacing: 0.5px; }
+        .tag-ship     { color: var(--ed-cyan);  border-color: rgba(0,229,255,0.35);    background: rgba(0,229,255,0.06); }
+        .tag-module   { color: var(--ed-orange);border-color: rgba(255,113,0,0.35);    background: rgba(255,113,0,0.06); }
+        .tag-material { color: var(--success);  border-color: rgba(0,255,68,0.35);     background: rgba(0,255,68,0.06); }
+        .tag-tech     { color: var(--purple);   border-color: rgba(176,38,255,0.35);   background: rgba(176,38,255,0.06); }
+        .tag-service  { color: #aaa;            border-color: rgba(170,170,170,0.2);   background: rgba(170,170,170,0.04); }
+        .tag-special  { color: var(--ed-orange);border-color: rgba(255,113,0,0.5);     background: rgba(255,113,0,0.1); }
+
+        /* Freshness badges */
+        .freshness { font-size: 0.65rem; padding: 1px 5px; border: 1px solid; letter-spacing: 1px; font-weight: 600; }
+        .fresh-good  { color: var(--success);  border-color: rgba(0,255,68,0.4); }
+        .fresh-ok    { color: var(--ed-orange);border-color: rgba(255,113,0,0.4); }
+        .fresh-stale { color: #666;            border-color: #444; }
+
+        /* Expand/collapse detail blocks */
+        .card-detail-block {
+            display: none; margin-top: 8px; border-top: 1px dashed rgba(255,255,255,0.08);
+            padding-top: 8px;
+        }
+        .card-detail-block.open { display: block; }
+
+        /* Expand buttons */
+        .expand-btn {
+            background: transparent; border: 1px solid; cursor: pointer;
+            font-family: 'Rajdhani', sans-serif; font-size: 0.78rem; font-weight: 700;
+            padding: 3px 10px; text-transform: uppercase; letter-spacing: 1px;
+            transition: all 0.2s; margin-top: 6px;
+        }
+        .expand-btn-ships     { color: var(--ed-cyan);  border-color: rgba(0,229,255,0.4); }
+        .expand-btn-ships:hover { background: rgba(0,229,255,0.1); }
+        .expand-btn-outfitting     { color: var(--ed-orange); border-color: rgba(255,113,0,0.4); }
+        .expand-btn-outfitting:hover { background: rgba(255,113,0,0.1); }
+
+        /* Module category grouping */
+        .mod-group { margin-bottom: 8px; }
+        .mod-group-label { font-size: 0.65rem; color: var(--ed-cyan); opacity: 0.6; letter-spacing: 1px; margin-bottom: 3px; }
+
+        /* Category pills on card */
+        .cat-pills { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
+        .cat-pill { font-size: 0.62rem; font-weight: 700; padding: 1px 5px; letter-spacing: 1px; border: 1px solid; }
+        .pill-ships      { color: var(--ed-cyan);  border-color: rgba(0,229,255,0.5); }
+        .pill-outfitting { color: var(--ed-orange);border-color: rgba(255,113,0,0.5); }
+        .pill-materials  { color: var(--success);  border-color: rgba(0,255,68,0.5); }
+        .pill-tech       { color: var(--purple);   border-color: rgba(176,38,255,0.5); }
+        .pill-services   { color: #aaa;            border-color: rgba(170,170,170,0.35); }
+
+        /* Hidden cards (filtered) */
+        .entry-card.hidden { display: none; }
+
+        /* Empty state */
+        .empty-state {
+            grid-column: 1/-1; text-align: center; padding: 4rem 2rem;
+            color: var(--ed-orange); opacity: 0.35; font-size: 1.1rem; letter-spacing: 2px;
+        }
+
+        /* Error state */
+        .error-banner {
+            background: rgba(255,51,51,0.05); border-left: 3px solid var(--danger);
+            padding: 14px 18px; color: var(--danger); font-size: 0.9rem; letter-spacing: 1px;
+            margin-bottom: 1rem;
+        }
+
+        /* ── Market display ─────────────────────────────────────────────── */
+        .mkt-cat-filters { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed rgba(255,255,255,0.06); }
+        .mkt-cat-btn {
+            background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #777;
+            font-family: 'Rajdhani', sans-serif; font-size: 0.68rem; font-weight: 700;
+            padding: 2px 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: all 0.15s;
+        }
+        .mkt-cat-btn:hover { border-color: var(--ed-orange); color: var(--ed-orange); }
+        .mkt-cat-btn.active { border-color: var(--ed-orange); color: var(--ed-orange); background: var(--ed-orange-dim); }
+
+        .mkt-table { display: grid; grid-template-columns: 1fr auto auto auto; border: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem; }
+        .mkt-th { background: rgba(0,0,0,0.5); color: var(--ed-orange); font-weight: 700; padding: 4px 8px; font-size: 0.63rem; letter-spacing: 1px; border-bottom: 1px solid rgba(255,113,0,0.2); }
+        .mkt-td { color: var(--text-light); padding: 3px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .mkt-td:nth-child(3n+1) { opacity: 0.9; } /* name column */
+        .mkt-right { text-align: right; }
+        .mkt-stock { color: var(--ed-cyan); font-weight: 600; }
+        .mkt-price { color: var(--ed-cyan); opacity: 0.75; }
+        .mkt-sell  { color: var(--ed-orange); opacity: 0.7; }
+
+        .expand-btn-market { color: var(--success); border-color: rgba(0,255,68,0.4); }
+        .expand-btn-market:hover { background: rgba(0,255,68,0.08); }
+        .pill-market { color: var(--success); border-color: rgba(0,255,68,0.5); }
+        .filter-btn[data-filter="market"].active { color: var(--success); text-shadow: 0 0 8px rgba(0,255,68,0.3); }
+
+        /* ── Banner Controls ─────────────────────────────────────────────── */
+        .ctrl-section { display: flex; flex-direction: column; gap: 10px; flex-grow: 1; min-width: 260px; }
+        .ctrl-label { font-size: 0.72rem; color: var(--ed-cyan); opacity: 0.7; font-weight: 600; letter-spacing: 2px; margin-bottom: 3px; display: block; }
+
+        .ref-select {
+            background: rgba(0,0,0,0.7); border: 1px solid rgba(0,229,255,0.3);
+            color: var(--ed-cyan); font-family: 'Rajdhani', sans-serif; font-weight: 600;
+            font-size: 1rem; padding: 7px 28px 7px 10px; width: 100%; text-transform: uppercase;
+            outline: none; letter-spacing: 1px; cursor: pointer;
+            -webkit-appearance: none; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M0 0l5 7 5-7z' fill='%2300e5ff' opacity='0.55'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center;
+        }
+        .ref-select:focus { border-color: var(--ed-cyan); box-shadow: 0 0 6px var(--ed-cyan-dim); }
+        .ref-select option { background: #0a0808; color: var(--text-light); }
+
+        .range-row { display: flex; align-items: center; gap: 8px; }
+        .range-slider {
+            flex: 1; -webkit-appearance: none; appearance: none; height: 4px;
+            background: #111; border: 1px solid rgba(0,229,255,0.2); outline: none; cursor: pointer;
+        }
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 14px; height: 14px;
+            background: var(--ed-cyan); cursor: pointer; border: 2px solid #000;
+            box-shadow: 0 0 6px var(--ed-cyan-dim);
+        }
+        .range-slider::-moz-range-thumb {
+            width: 14px; height: 14px; background: var(--ed-cyan); cursor: pointer;
+            border: 2px solid #000; border-radius: 0; box-shadow: 0 0 6px var(--ed-cyan-dim);
+        }
+        .range-num {
+            background: rgba(0,0,0,0.7); border: 1px solid rgba(0,229,255,0.3);
+            color: var(--ed-cyan); font-family: 'Rajdhani', sans-serif; font-weight: 700;
+            font-size: 1rem; padding: 5px 6px; width: 58px; text-align: center;
+            text-transform: uppercase; outline: none;
+            -moz-appearance: textfield;
+        }
+        .range-num::-webkit-inner-spin-button,
+        .range-num::-webkit-outer-spin-button { -webkit-appearance: none; }
+        .range-num:focus { border-color: var(--ed-cyan); box-shadow: 0 0 6px var(--ed-cyan-dim); }
+        .range-unit { font-size: 0.72rem; color: var(--ed-cyan); opacity: 0.5; font-weight: 600; letter-spacing: 1px; white-space: nowrap; }
+
+        .recalib-btn {
+            background: var(--ed-orange-dim); border: 1px solid var(--ed-orange);
+            color: var(--text-light); font-family: 'Rajdhani', sans-serif; font-weight: 700;
+            font-size: 1rem; padding: 8px 20px; cursor: pointer; text-transform: uppercase;
+            letter-spacing: 2px; transition: all 0.2s; width: 100%;
+        }
+        .recalib-btn:hover:not(:disabled) { background: rgba(255,113,0,0.3); box-shadow: 0 0 10px var(--ed-orange-glow); color: #fff; }
+        .recalib-btn:disabled { opacity: 0.4; cursor: not-allowed; border-color: #555; color: #888; background: #222; }
+
+        @media (max-width: 700px) {
+            .entries-grid { grid-template-columns: 1fr; }
+            .header { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .home-banner { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="scanlines"></div>
+
+    <div class="container">
+
+        <!-- ── Header ────────────────────────────────────────────────── -->
+        <header class="header">
+            <div>
+                <div id="gst-clock" style="color:var(--text-light);font-weight:600;font-size:1rem;letter-spacing:2px;margin-bottom:5px;opacity:0.9;">SYNCING TIME...</div>
+                <h1>WASABI ORBITAL SOCIAL CLUB</h1>
+                <div class="header-sub">SQUADRON INTERFACE</div>
+            </div>
+            <div style="text-align:right;">
+                <div class="header-sub" style="color:var(--ed-orange);">Welcome, CMDR!</div>
+            </div>
+        </header>
+
+        <!-- ── Site Navigation ───────────────────────────────────────── -->
+        <nav class="site-nav">
+            <a href="index.html">&#9632; DASHBOARD</a>
+            <a href="neighborhood.html" class="active">&#9670; LOCAL NEIGHBORHOOD</a>
+            <a href="bgs-tools.html">&#9670; BGS TOOLS</a>
+        </nav>
+
+        <!-- ── Home System Banner ────────────────────────────────────── -->
+        <div class="home-banner">
+            <div class="ctrl-section">
+                <div>
+                    <label class="ctrl-label" for="ref-system">REFERENCE ORIGIN</label>
+                    <select id="ref-system" class="ref-select">
+                        <!-- populated by JS from COLONIZED_SYSTEMS -->
+                    </select>
+                </div>
+                <div>
+                    <label class="ctrl-label" for="ref-slider">SEARCH RADIUS</label>
+                    <div class="range-row">
+                        <input type="range"  id="ref-slider" class="range-slider" min="5" max="100" value="100"
+                               oninput="syncRangeFromSlider(this.value)">
+                        <input type="number" id="ref-range"  class="range-num"    min="5" max="100" value="100"
+                               oninput="syncRangeFromInput(this.value)">
+                        <span class="range-unit">Ly (max 100)</span>
+                    </div>
+                </div>
+                <button id="recalib-btn" class="recalib-btn" onclick="recalibrate()">&#9654; RECALIBRATE SECTOR</button>
+            </div>
+            <div class="home-meta">
+                <div class="home-stat">
+                    <span class="home-stat-label">POPULATED SYSTEMS</span>
+                    <span class="home-stat-val" id="stat-systems">—</span>
+                </div>
+                <div class="home-stat">
+                    <span class="home-stat-label">STATIONS FOUND</span>
+                    <span class="home-stat-val" id="stat-stations">—</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Loading State ─────────────────────────────────────────── -->
+        <div id="load-status">
+            <div class="load-bar-bg"><div class="load-bar-fill" id="load-bar"></div></div>
+            <div id="load-text">INITIALIZING UPLINK...</div>
+        </div>
+
+        <!-- ── Filter Bar ────────────────────────────────────────────── -->
+        <div class="filter-bar" id="filter-bar" style="display:none;">
+            <button class="filter-btn active" data-filter="all"        onclick="setFilter('all')">ALL</button>
+            <button class="filter-btn"         data-filter="ships"      onclick="setFilter('ships')">&#9658; SHIPYARDS</button>
+            <button class="filter-btn"         data-filter="outfitting" onclick="setFilter('outfitting')">&#9650; OUTFITTING</button>
+            <button class="filter-btn"         data-filter="materials"  onclick="setFilter('materials')">&#9670; MATERIAL TRADERS</button>
+            <button class="filter-btn"         data-filter="tech"       onclick="setFilter('tech')">&#9733; TECH BROKERS</button>
+            <button class="filter-btn"         data-filter="services"   onclick="setFilter('services')">&#9632; SPECIAL SERVICES</button>
+        </div>
+
+        <!-- ── Sort / Count Bar ──────────────────────────────────────── -->
+        <div class="sort-bar" id="sort-bar" style="display:none;">
+            <span>SORTED BY: <strong style="color:var(--ed-orange);opacity:1;">DISTANCE ASC</strong></span>
+            <span class="entry-count"><span id="visible-count">0</span> LOCATIONS DISPLAYED</span>
+        </div>
+
+        <!-- ── Entries Grid ──────────────────────────────────────────── -->
+        <div class="entries-grid" id="entries-grid"></div>
+
+    </div>
+
+    <script src="data.js"></script>
+    <script>
+    // COLONIZED_SYSTEMS is defined in data.js
+
+    const SYSTEM_NICKNAMES = Object.fromEntries(
+        COLONIZED_SYSTEMS.map(s => [s.realName, s.nickName])
+    );
+
+    // Services considered "special" for the SERVICES filter
+    const SPECIAL_SERVICES = [
+        "Interstellar Factors",
+        "Black Market",
+        "Universal Cartographics",
+        "Search and Rescue",
+    ];
+
+    // Station types to skip (player-owned / transient)
+    const SKIP_TYPES = ["Fleet Carrier"];
+
+    // =========================================================================
+    // STATE
+    // =========================================================================
+    let currentFilter = "all";
+    let allEntries    = []; // { station, system, idx }
+    let isLoading     = false;
+    let activeSystem  = COLONIZED_SYSTEMS[0].realName;
+    let activeRadius  = 100;
+
+    // =========================================================================
+    // GST CLOCK
+    // =========================================================================
+    function updateGSTClock() {
+        const now = new Date();
+        const edYear  = now.getUTCFullYear() + 1286;
+        const months  = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+        const monthStr = months[now.getUTCMonth()];
+        const day     = String(now.getUTCDate()).padStart(2,'0');
+        const hours   = String(now.getUTCHours()).padStart(2,'0');
+        const minutes = String(now.getUTCMinutes()).padStart(2,'0');
+        const seconds = String(now.getUTCSeconds()).padStart(2,'0');
+        document.getElementById('gst-clock').innerText = `${day} ${monthStr} ${edYear} // ${hours}:${minutes}:${seconds} GST`;
+    }
+    updateGSTClock();
+    setInterval(updateGSTClock, 1000);
+
+    // =========================================================================
+    // CONTROL FUNCTIONS
+    // =========================================================================
+    function populateSystemSelect() {
+        const sel = document.getElementById('ref-system');
+        COLONIZED_SYSTEMS.forEach(sys => {
+            const opt = document.createElement('option');
+            opt.value = sys.realName;
+            opt.textContent = sys.nickName !== sys.realName
+                ? `${sys.nickName}  //  ${sys.realName}`
+                : sys.realName;
+            sel.appendChild(opt);
+        });
+    }
+
+    function syncRangeFromSlider(val) {
+        document.getElementById('ref-range').value = val;
+    }
+
+    function syncRangeFromInput(val) {
+        const clamped = Math.min(100, Math.max(5, parseInt(val) || 5));
+        document.getElementById('ref-slider').value = clamped;
+    }
+
+    function recalibrate() {
+        if (isLoading) return;
+        const raw    = parseInt(document.getElementById('ref-range').value) || 100;
+        activeSystem = document.getElementById('ref-system').value;
+        activeRadius = Math.min(100, Math.max(5, raw));
+        // Sync both controls to the clamped value
+        document.getElementById('ref-range').value  = activeRadius;
+        document.getElementById('ref-slider').value = activeRadius;
+        loadNeighborhood();
+    }
+
+    // =========================================================================
+    // LOADING PROGRESS
+    // =========================================================================
+    function setProgress(pct, text) {
+        document.getElementById('load-bar').style.width = pct + '%';
+        document.getElementById('load-text').textContent = text;
+    }
+
+    function showError(msg) {
+        document.getElementById('load-status').classList.add('done');
+        const grid = document.getElementById('entries-grid');
+        grid.innerHTML = `<div class="error-banner">&#9888; UPLINK FAILED: ${msg}</div>`;
+        document.getElementById('filter-bar').style.display = 'flex';
+        document.getElementById('sort-bar').style.display  = 'flex';
+    }
+
+    // =========================================================================
+    // HELPER FUNCTIONS
+    // =========================================================================
+
+    // Infer landing pad size from station type string
+    function inferPadSize(type) {
+        if (!type) return "?";
+        const t = type.toLowerCase();
+        if (t.includes("coriolis") || t.includes("orbis") || t.includes("ocellus") ||
+            t.includes("asteroid base") || t.includes("mega ship") || t.includes("planetary port")) return "L";
+        if (t.includes("planetary outpost") || t.includes("planetary settlement") || t.includes("odyssey settlement")) return "M";
+        if (t.includes("outpost")) return "M";
+        return "?";
+    }
+
+    // Determine which filter categories a station belongs to
+    function getCategories(station) {
+        const cats = [];
+        const svc  = station.otherServices || [];
+
+        if (station.haveShipyard)                              cats.push("ships");
+        if (station.haveOutfitting)                            cats.push("outfitting");
+        if (svc.includes("Material Trader"))                   cats.push("materials");
+        if (svc.includes("Technology Broker"))                 cats.push("tech");
+        if (SPECIAL_SERVICES.some(s => svc.includes(s)))      cats.push("services");
+
+        if (cats.length === 0) cats.push("services"); // fallback
+        return cats;
+    }
+
+    // Priority order for primary card color
+    const CAT_PRIORITY = ["tech", "materials", "ships", "outfitting", "services"];
+
+    function primaryCat(cats) {
+        for (const p of CAT_PRIORITY) if (cats.includes(p)) return p;
+        return "services";
+    }
+
+    function pillClass(c)  { return { ships:"pill-ships", outfitting:"pill-outfitting", materials:"pill-materials", tech:"pill-tech", services:"pill-services" }[c] || "pill-services"; }
+    function padClass(p)   { return { L:"pad-L", M:"pad-M", S:"pad-S" }[p] || "pad-U"; }
+
+    // Infer material trader type from economy
+    function materialTraderType(economy) {
+        if (!economy) return null;
+        const e = economy.toLowerCase();
+        if (e.includes("extraction") || e.includes("refinery"))       return "Raw";
+        if (e.includes("industrial"))                                   return "Manufactured";
+        if (e.includes("high tech") || e.includes("military"))         return "Encoded";
+        return null;
+    }
+
+    // Human-readable freshness label for a date string
+    function freshnessLabel(dateStr) {
+        if (!dateStr) return null;
+        const days = (Date.now() - new Date(dateStr + " UTC")) / 86400000;
+        if (days < 7)  return { label: "FRESH",  cls: "fresh-good"  };
+        if (days < 30) return { label: "OK",      cls: "fresh-ok"    };
+        return             { label: "STALE",  cls: "fresh-stale" };
+    }
+
+    // =========================================================================
+    // CARD RENDERING
+    // =========================================================================
+    function buildCard(entry) {
+        const { station, system, idx } = entry;
+        const cats   = getCategories(station);
+        const pCat   = primaryCat(cats);
+        const pad    = inferPadSize(station.type);
+        const nick   = SYSTEM_NICKNAMES[system.name];
+        const dist   = typeof system.distance === "number" ? system.distance.toFixed(1) : "?";
+        const svc    = station.otherServices || [];
+        const updateInfo = station.updateTime || {};
+
+        // Data freshness
+        const freshDate = updateInfo.information || updateInfo.market || null;
+        const fresh = freshnessLabel(freshDate);
+
+        // Station type display cleanup
+        let stationTypeDisplay = station.type || "Unknown";
+        if (stationTypeDisplay === "Odyssey Settlement") stationTypeDisplay = "Planetary Settlement";
+
+        // Category pills
+        const pillsHtml = cats.map(c => {
+            const labels = { ships:"SHIPYARD", outfitting:"OUTFITTING", materials:"MAT TRADER", tech:"TECH BROKER", services:"SERVICES" };
+            return `<span class="cat-pill ${pillClass(c)}">${labels[c] || c.toUpperCase()}</span>`;
+        }).join('');
+
+        // Notable services tags
+        const notableServices = svc.filter(s =>
+            !["Refuel","Repair","Restock","Dock","Missions","Contacts","Crew Lounge"].includes(s)
+        );
+        const allDisplayServices = [...notableServices];
+
+        const servicesHtml = allDisplayServices.map(s => {
+            const isSpecial = SPECIAL_SERVICES.includes(s) || s === "Material Trader" || s === "Technology Broker";
+            return `<span class="tag ${isSpecial ? 'tag-special' : 'tag-service'}">${s}</span>`;
+        }).join('');
+
+        // Material trader type inference
+        const matType = materialTraderType(station.economy || (system.information && system.information.economy));
+        const matTypeHtml = matType ? `<span class="tag tag-material">${matType} MATERIALS</span>` : '';
+
+        // Store lookup so toggleDetail never needs names in the onclick attribute
+        stationLookup[idx] = { systemName: system.name, stationName: station.name };
+
+        // Expand buttons for lazy-loaded details
+        const shipsBtnHtml = station.haveShipyard
+            ? `<button class="expand-btn expand-btn-ships" onclick="toggleDetail(${idx},'ships')">&#9654; SHOW SHIPS</button>`
+            : '';
+        const modsBtnHtml = station.haveOutfitting
+            ? `<button class="expand-btn expand-btn-outfitting" onclick="toggleDetail(${idx},'outfitting')">&#9654; SHOW MODULES</button>`
+            : '';
+        const marketBtnHtml = station.haveMarket
+            ? `<button class="expand-btn expand-btn-market" onclick="toggleDetail(${idx},'market')">&#9654; SHOW MARKET</button>`
+            : '';
+
+        // Freshness badge
+        const freshHtml = fresh ? `<span class="freshness ${fresh.cls}">${fresh.label}</span>` : '';
+
+        // Economy
+        const ecoDisplay = station.economy || (system.information && system.information.economy) || null;
+
+        // Arrival distance
+        const arrivalDist = station.distanceToArrival ? station.distanceToArrival.toLocaleString() + " Ls" : "—";
+
+        // Controlling faction
+        const ctrlFaction = station.controllingFaction ? station.controllingFaction.name : null;
+
+        return `
+        <div class="entry-card card-${pCat}"
+             data-ships="${cats.includes('ships') ? '1' : '0'}"
+             data-outfitting="${cats.includes('outfitting') ? '1' : '0'}"
+             data-materials="${cats.includes('materials') ? '1' : '0'}"
+             data-tech="${cats.includes('tech') ? '1' : '0'}"
+             data-services="${cats.includes('services') ? '1' : '0'}">
+
+            <!-- Header -->
+            <div class="card-header">
+                <div style="min-width:0;">
+                    <div class="card-station-name">${station.name}</div>
+                    <div class="card-system-name">${system.name}</div>
+                    ${nick && nick !== system.name ? `<div class="card-system-nick">"${nick}"</div>` : ''}
+                    <div class="cat-pills">${pillsHtml}</div>
+                </div>
+                <div class="card-dist-block" style="text-align:right;flex-shrink:0;">
+                    <div class="card-dist-val">${dist}</div>
+                    <div class="card-dist-unit">LY</div>
+                    <div class="card-pad ${padClass(pad)}">PAD ${pad}</div>
+                </div>
+            </div>
+
+            <!-- Meta row -->
+            <div class="card-meta">
+                <span>&#9632; ${stationTypeDisplay}</span>
+                <span>&#9670; ${arrivalDist}</span>
+                ${ecoDisplay ? `<span>&#9633; ${ecoDisplay}</span>` : ''}
+                ${freshHtml}
+            </div>
+
+            <!-- Body -->
+            <div class="card-body">
+
+                ${servicesHtml ? `<div>
+                    <div class="section-label">FACILITIES</div>
+                    <div class="tag-row">
+                        ${cats.includes('materials') ? matTypeHtml : ''}
+                        ${servicesHtml}
+                    </div>
+                </div>` : ''}
+
+                ${ctrlFaction ? `<div style="font-size:0.78rem;color:var(--text-light);opacity:0.5;">
+                    CONTROLLED BY: <span style="color:var(--ed-cyan);opacity:0.8;">${ctrlFaction}</span>
+                </div>` : ''}
+
+                <!-- Expand buttons -->
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    ${shipsBtnHtml}
+                    ${modsBtnHtml}
+                    ${marketBtnHtml}
+                </div>
+
+                <!-- Lazy-loaded ship detail -->
+                ${station.haveShipyard ? `<div class="card-detail-block" id="detail-ships-${idx}">
+                    <div class="section-label">AVAILABLE SHIPS</div>
+                    <div id="ships-content-${idx}"><span style="color:var(--ed-cyan);opacity:0.5;font-size:0.8rem;">CLICK TO LOAD...</span></div>
+                </div>` : ''}
+
+                <!-- Lazy-loaded outfitting detail -->
+                ${station.haveOutfitting ? `<div class="card-detail-block" id="detail-outfitting-${idx}">
+                    <div class="section-label">OUTFITTING MODULES</div>
+                    <div id="outfitting-content-${idx}"><span style="color:var(--ed-cyan);opacity:0.5;font-size:0.8rem;">CLICK TO LOAD...</span></div>
+                </div>` : ''}
+
+                <!-- Lazy-loaded market detail -->
+                ${station.haveMarket ? `<div class="card-detail-block" id="detail-market-${idx}">
+                    <div class="section-label">COMMODITIES IN STOCK</div>
+                    <div id="market-filter-${idx}" class="mkt-cat-filters"></div>
+                    <div id="market-content-${idx}"><span style="color:var(--ed-cyan);opacity:0.5;font-size:0.8rem;">CLICK TO LOAD...</span></div>
+                </div>` : ''}
+
+            </div>
+        </div>`;
+    }
+
+    // =========================================================================
+    // LAZY DETAIL LOADING (ships / outfitting)
+    // =========================================================================
+    const detailLoaded  = {}; // cache: "ships-{idx}" / "outfitting-{idx}" → true
+    const stationLookup = {}; // idx → { systemName, stationName } — populated by buildCard
+
+    async function toggleDetail(idx, type) {
+        const blockId   = `detail-${type}-${idx}`;
+        const contentId = `${type}-content-${idx}`;
+        const block     = document.getElementById(blockId);
+        const content   = document.getElementById(contentId);
+        if (!block || !content) return;
+
+        block.classList.toggle('open');
+        if (!block.classList.contains('open')) return; // collapsed — no fetch needed
+
+        const cacheKey = `${type}-${idx}`;
+        if (detailLoaded[cacheKey]) return; // already fetched
+        detailLoaded[cacheKey] = true;
+
+        content.innerHTML = `<span style="color:var(--ed-cyan);opacity:0.6;font-size:0.8rem;font-style:italic;">REQUESTING DATA...</span>`;
+
+        try {
+            const { systemName, stationName } = stationLookup[idx];
+
+            if (type === 'market') {
+                const res  = await fetch(`https://www.edsm.net/api-system-v1/stations/market?systemName=${encodeURIComponent(systemName)}&stationName=${encodeURIComponent(stationName)}`);
+                const data = await res.json();
+                const filterEl = document.getElementById(`market-filter-${idx}`);
+                renderMarketDetail(content, filterEl, idx, data);
+            } else {
+                const endpoint = type === 'ships' ? 'shipyard' : 'outfitting';
+                const res  = await fetch(`https://www.edsm.net/api-system-v1/stations/${endpoint}?systemName=${encodeURIComponent(systemName)}&stationName=${encodeURIComponent(stationName)}`);
+                const data = await res.json();
+                if (type === 'ships') renderShipDetail(content, data);
+                else                  renderOutfittingDetail(content, data);
+            }
+        } catch(err) {
+            content.innerHTML = `<span style="color:var(--danger);font-size:0.8rem;">UPLINK FAILED</span>`;
+        }
+    }
+
+    // Defensively extract ship names from any plausible EDSM shipyard response shape
+    function extractShipNames(data) {
+        // EDSM has returned: { ships: { shipyard_list: { id:{name} } } }
+        // and sometimes:     { ships: { shipyard_list: [ {name} ] } }
+        // and sometimes:     { ships: null } or { ships: {} }
+        let raw = null;
+        if (data.ships) {
+            raw = data.ships.shipyard_list ?? data.ships;
+        } else if (data.shipyard_list) {
+            raw = data.shipyard_list;
+        }
+        if (!raw || (typeof raw === 'object' && !Array.isArray(raw) && Object.keys(raw).length === 0)) return [];
+        const items = Array.isArray(raw) ? raw : Object.values(raw);
+        return [...new Set(
+            items.map(s => typeof s === 'string' ? s : (s && (s.name || s.Name || s.shipName)))
+                 .filter(Boolean)
+        )].sort();
+    }
+
+    // Defensively extract module list from any plausible EDSM outfitting response shape
+    function extractModules(data) {
+        let raw = null;
+        if (data.outfitting) {
+            raw = data.outfitting.outfitting_list ?? data.outfitting;
+        } else if (data.outfitting_list) {
+            raw = data.outfitting_list;
+        }
+        if (!raw || (typeof raw === 'object' && !Array.isArray(raw) && Object.keys(raw).length === 0)) return [];
+        const items = Array.isArray(raw) ? raw : Object.values(raw);
+        return items.filter(m => m && (m.name || m.Name))
+                    .map(m => ({ name: m.name || m.Name, category: m.category || m.Category || "Other" }));
+    }
+
+    function renderShipDetail(container, data) {
+        const names = extractShipNames(data);
+        if (names.length === 0) {
+            container.innerHTML = `<span style="color:#555;font-size:0.8rem;font-style:italic;">No shipyard list in EDSM for this station — data may not have been submitted yet.</span>`;
+            return;
+        }
+        container.innerHTML = `<div class="tag-row">${names.map(n => `<span class="tag tag-ship">${n}</span>`).join('')}</div>`;
+    }
+
+    function renderOutfittingDetail(container, data) {
+        const modules = extractModules(data);
+        if (modules.length === 0) {
+            container.innerHTML = `<span style="color:#555;font-size:0.8rem;font-style:italic;">No outfitting list in EDSM for this station — data may not have been submitted yet.</span>`;
+            return;
+        }
+
+        // Group by category, de-duplicate within each
+        const byCategory = {};
+        modules.forEach(m => {
+            if (!byCategory[m.category]) byCategory[m.category] = new Set();
+            byCategory[m.category].add(m.name);
+        });
+
+        const catOrder = ["Hardpoint","Utility Mount","Core Internal","Optional Internal","Armour"];
+        const sortedCats = Object.keys(byCategory).sort((a, b) => {
+            const ai = catOrder.indexOf(a), bi = catOrder.indexOf(b);
+            if (ai >= 0 && bi >= 0) return ai - bi;
+            if (ai >= 0) return -1; if (bi >= 0) return 1;
+            return a.localeCompare(b);
+        });
+
+        container.innerHTML = sortedCats.map(cat => {
+            const mods = [...byCategory[cat]].sort();
+            return `<div class="mod-group">
+                <div class="mod-group-label">${cat}</div>
+                <div class="tag-row">${mods.map(n => `<span class="tag tag-module">${n}</span>`).join('')}</div>
+            </div>`;
+        }).join('');
+    }
+
+    // =========================================================================
+    // MARKET / COMMODITY DETAIL
+    // =========================================================================
+    const marketDataCache = {}; // idx → inStock array
+
+    function renderMarketDetail(container, filterEl, idx, data) {
+        if (!data || !data.commodities || data.commodities.length === 0) {
+            container.innerHTML = `<span style="color:#555;font-size:0.8rem;font-style:italic;">No market data in EDSM for this station.</span>`;
+            return;
+        }
+
+        const inStock = data.commodities
+            .filter(c => (c.stock || 0) > 0)
+            .sort((a, b) => b.stock - a.stock);
+
+        if (inStock.length === 0) {
+            container.innerHTML = `<span style="color:#555;font-size:0.8rem;font-style:italic;">No items currently in stock.</span>`;
+            return;
+        }
+
+        marketDataCache[idx] = inStock;
+
+        // Only show category filter buttons when there are multiple distinct categories
+        const categories = [...new Set(inStock.map(c => c.category || 'Other'))].sort();
+        if (filterEl) {
+            if (categories.length > 1) {
+                filterEl.innerHTML =
+                    `<button class="mkt-cat-btn active" data-cat="" onclick="filterMarket(${idx}, null)">ALL (${inStock.length})</button>`
+                    + categories.map(cat => {
+                        const n = inStock.filter(c => (c.category || 'Other') === cat).length;
+                        return `<button class="mkt-cat-btn" data-cat="${cat}" onclick="filterMarket(${idx}, '${cat}')">${cat} (${n})</button>`;
+                    }).join('');
+            } else {
+                filterEl.innerHTML = '';
+            }
+        }
+
+        renderMarketRows(container, inStock);
+    }
+
+    function filterMarket(idx, category) {
+        const filterEl = document.getElementById(`market-filter-${idx}`);
+        if (filterEl) {
+            filterEl.querySelectorAll('.mkt-cat-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.cat === (category || ''));
+            });
+        }
+        const all = marketDataCache[idx];
+        if (!all) return;
+        const filtered = category ? all.filter(c => (c.category || 'Other') === category) : all;
+        const content  = document.getElementById(`market-content-${idx}`);
+        if (content) renderMarketRows(content, filtered);
+    }
+
+    function renderMarketRows(container, items) {
+        if (!items.length) {
+            container.innerHTML = `<span style="color:#555;font-size:0.8rem;font-style:italic;">No items match this filter.</span>`;
+            return;
+        }
+        // EDSM may return buy_price (snake) or buyPrice (camel) depending on data source version
+        const fmt = n => (n != null && n > 0) ? n.toLocaleString() + ' CR' : '—';
+        container.innerHTML = `<div class="mkt-table">
+            <div class="mkt-th">COMMODITY</div>
+            <div class="mkt-th mkt-right">STOCK</div>
+            <div class="mkt-th mkt-right">BUY</div>
+            <div class="mkt-th mkt-right">SELL</div>
+            ${items.map(c => {
+                const buy  = c.buy_price  ?? c.buyPrice  ?? null;
+                const sell = c.sell_price ?? c.sellPrice ?? null;
+                return `<div class="mkt-td">${c.name}</div>
+                <div class="mkt-td mkt-right mkt-stock">${(c.stock || 0).toLocaleString()}</div>
+                <div class="mkt-td mkt-right mkt-price">${fmt(buy)}</div>
+                <div class="mkt-td mkt-right mkt-sell">${fmt(sell)}</div>`;
+            }).join('')}
+        </div>`;
+    }
+
+    // =========================================================================
+    // FILTER
+    // =========================================================================
+    function setFilter(filter) {
+        currentFilter = filter;
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.filter === filter);
+        });
+        applyFilter();
+    }
+
+    function applyFilter() {
+        const cards = document.querySelectorAll('.entry-card');
+        let visible = 0;
+        cards.forEach(card => {
+            let show;
+            if (currentFilter === 'all') {
+                show = true;
+            } else {
+                show = card.dataset[currentFilter] === '1';
+            }
+            card.classList.toggle('hidden', !show);
+            if (show) visible++;
+        });
+        document.getElementById('visible-count').textContent = visible;
+
+        // Empty state
+        let empty = document.getElementById('empty-state');
+        const grid = document.getElementById('entries-grid');
+        if (visible === 0) {
+            if (!empty) {
+                empty = document.createElement('div');
+                empty.id = 'empty-state';
+                empty.className = 'empty-state';
+                empty.textContent = '// NO LOCATIONS FOUND IN THIS CATEGORY //';
+                grid.appendChild(empty);
+            }
+            empty.style.display = 'block';
+        } else if (empty) {
+            empty.style.display = 'none';
+        }
+    }
+
+    // =========================================================================
+    // MAIN LOAD SEQUENCE
+    // =========================================================================
+    async function loadNeighborhood() {
+        if (isLoading) return;
+        isLoading = true;
+
+        // Disable recalibrate during load
+        const recalibBtn = document.getElementById('recalib-btn');
+        if (recalibBtn) recalibBtn.disabled = true;
+
+        // Full UI reset for a fresh load
+        const grid = document.getElementById('entries-grid');
+        grid.innerHTML = '';
+        document.getElementById('filter-bar').style.display  = 'none';
+        document.getElementById('sort-bar').style.display    = 'none';
+        document.getElementById('stat-systems').textContent  = '—';
+        document.getElementById('stat-stations').textContent = '—';
+        const loadStatus = document.getElementById('load-status');
+        loadStatus.classList.remove('done');
+        document.getElementById('load-bar').style.width = '0%';
+        setFilter('all');
+
+        // Clear caches from any previous load
+        Object.keys(stationLookup).forEach(k => delete stationLookup[k]);
+        Object.keys(detailLoaded).forEach(k => delete detailLoaded[k]);
+        Object.keys(marketDataCache).forEach(k => delete marketDataCache[k]);
+
+        try {
+            // ── Phase 1: Get populated systems in sphere ──────────────────
+            setProgress(5, "1/3: SYNCING SPHERE COORDINATES...");
+            const sphereRes = await fetch(
+                `https://www.edsm.net/api-v1/sphere-systems` +
+                `?systemName=${encodeURIComponent(activeSystem)}` +
+                `&radius=${activeRadius}` +
+                `&showId=1&showCoordinates=1&showInformation=1&showPermit=0&showPrimaryStar=0&minRadius=0`
+            );
+            if (!sphereRes.ok) throw new Error(`Sphere API returned ${sphereRes.status}`);
+            const sphereSystems = await sphereRes.json();
+
+            if (!Array.isArray(sphereSystems) || sphereSystems.length === 0) {
+                throw new Error("No systems returned from EDSM sphere search.");
+            }
+
+            // Filter to populated systems only
+            const populated = sphereSystems.filter(s =>
+                s.information && (s.information.population || 0) > 0
+            );
+
+            document.getElementById('stat-systems').textContent = populated.length;
+            setProgress(20, `2/3: FOUND ${populated.length} POPULATED SYSTEMS — SCANNING STATIONS...`);
+
+            if (populated.length === 0) {
+                throw new Error("No populated systems found within range.");
+            }
+
+            // ── Phase 2: Fetch stations per system (batched) ──────────────
+            const BATCH = 8;
+            const rawEntries = [];
+
+            for (let i = 0; i < populated.length; i += BATCH) {
+                const batch   = populated.slice(i, i + BATCH);
+                const results = await Promise.all(batch.map(sys =>
+                    fetch(`https://www.edsm.net/api-system-v1/stations?systemName=${encodeURIComponent(sys.name)}`)
+                        .then(r => r.json())
+                        .catch(() => ({ stations: [] }))
+                ));
+
+                results.forEach((data, j) => {
+                    const sys = batch[j];
+                    (data.stations || []).forEach(station => {
+                        if (SKIP_TYPES.includes(station.type)) return;
+                        rawEntries.push({ station, system: sys });
+                    });
+                });
+
+                const pct = 20 + Math.round(((i + BATCH) / populated.length) * 75);
+                setProgress(Math.min(pct, 95),
+                    `3/3: AUDITING STATIONS... (${Math.min(i + BATCH, populated.length)}/${populated.length} systems)`
+                );
+            }
+
+            // ── Sort by system distance, then arrival distance within system ──
+            rawEntries.sort((a, b) => {
+                const dd = (a.system.distance || 0) - (b.system.distance || 0);
+                if (Math.abs(dd) > 0.05) return dd;
+                return (a.station.distanceToArrival || 0) - (b.station.distanceToArrival || 0);
+            });
+
+            // Assign stable indices
+            allEntries = rawEntries.map((e, idx) => ({ ...e, idx }));
+
+            // ── Render ────────────────────────────────────────────────────
+            document.getElementById('stat-stations').textContent = allEntries.length;
+            grid.innerHTML = allEntries.map(buildCard).join('');
+
+            setProgress(100, `UPLINK COMPLETE — ${allEntries.length} STATIONS INDEXED`);
+            document.getElementById('load-status').classList.add('done');
+            document.getElementById('filter-bar').style.display = 'flex';
+            document.getElementById('sort-bar').style.display   = 'flex';
+            applyFilter();
+
+        } catch(err) {
+            console.error("Neighborhood load failed:", err);
+            showError(err.message);
+        } finally {
+            isLoading = false;
+            if (recalibBtn) recalibBtn.disabled = false;
+        }
+    }
+
+    // =========================================================================
+    // INIT
+    // =========================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+        populateSystemSelect();
+        loadNeighborhood();
+    });
+    </script>
+</body>
+</html>
