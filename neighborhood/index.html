@@ -53,7 +53,7 @@
 
         /* ── Site Navigation ─────────────────────────────────────────────── */
         .site-nav {
-            display: flex; margin-bottom: 1.5rem;
+            display: flex; margin-bottom: 1.5rem; flex-wrap: wrap;
             border: 1px solid var(--ed-orange-dim);
             border-bottom: 2px solid var(--ed-orange);
             background: rgba(0,0,0,0.5); width: fit-content;
@@ -308,7 +308,7 @@
             font-size: 0.88rem; font-weight: 600;
             padding: 5px 10px;
             text-transform: uppercase; outline: none; letter-spacing: 1px;
-            width: 220px;
+            width: min(220px, 100%);
         }
         .comm-search:focus { border-color: rgba(0,255,68,0.6); box-shadow: 0 0 6px rgba(0,255,68,0.15); }
         .comm-search::placeholder { color: #2a2a2a; text-transform: uppercase; }
@@ -392,10 +392,35 @@
         .recalib-btn:hover:not(:disabled) { background: rgba(255,113,0,0.3); box-shadow: 0 0 10px var(--ed-orange-glow); color: #fff; }
         .recalib-btn:disabled { opacity: 0.4; cursor: not-allowed; border-color: #555; color: #888; background: #222; }
 
-        @media (max-width: 700px) {
+        @media (max-width: 900px) {
             .entries-grid { grid-template-columns: 1fr; }
-            .header { flex-direction: column; align-items: flex-start; gap: 8px; }
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            .header { flex-direction: column; align-items: flex-start; gap: 6px; }
+            .header h1 { font-size: 1.5rem; letter-spacing: 1px; }
+            .header > div:last-child { display: none; }
             .home-banner { flex-direction: column; align-items: flex-start; }
+            .ctrl-section { min-width: 0; width: 100%; }
+            .site-nav { width: 100%; }
+            .site-nav a { padding: 8px 12px; font-size: 0.88rem; letter-spacing: 1px; flex: 1; text-align: center; }
+            .filter-bar { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+            .filter-btn { flex-shrink: 0; padding: 8px 12px; font-size: 0.85rem; letter-spacing: 1px; }
+            .sort-bar { flex-direction: column; align-items: flex-start; gap: 4px; font-size: 0.75rem; }
+            .home-meta { gap: 15px; }
+            .range-unit { font-size: 0.65rem; white-space: nowrap; }
+            .card-header { flex-wrap: wrap; }
+            .commodity-panel { flex-direction: column; }
+            .comm-field { width: 100%; }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 { font-size: 1.2rem; }
+            .site-nav a { padding: 7px 8px; font-size: 0.78rem; letter-spacing: 0.5px; }
+            .filter-btn { padding: 8px 10px; font-size: 0.8rem; }
+            .recalib-btn { font-size: 0.9rem; letter-spacing: 1px; }
+            .range-unit { display: none; }
         }
     </style>
 </head>

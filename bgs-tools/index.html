@@ -53,7 +53,7 @@
 
         /* Navigation */
         .site-nav {
-            display: flex; margin-bottom: 2rem;
+            display: flex; margin-bottom: 2rem; flex-wrap: wrap;
             border: 1px solid var(--ed-orange-dim);
             border-bottom: 2px solid var(--ed-orange);
             background: rgba(0, 0, 0, 0.5); width: fit-content;
@@ -218,6 +218,35 @@
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(6px); }
             to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            .header { flex-direction: column; align-items: flex-start; gap: 4px; }
+            .header h1 { font-size: 1.5rem; letter-spacing: 1px; }
+            .header > div:last-child { display: none; }
+            .site-nav { width: 100%; margin-bottom: 1.5rem; }
+            .site-nav a { padding: 8px 12px; font-size: 0.88rem; letter-spacing: 1px; flex: 1; text-align: center; }
+            .tool-banner { flex-direction: column; gap: 12px; }
+            .tool-banner > div:last-child { text-align: left; }
+            .tool-banner-text { font-size: 0.88rem; }
+            .panel-header { padding: 0.6rem 1rem; }
+            .panel-header h2 { font-size: 1.1rem; letter-spacing: 1px; }
+            .panel-content { padding: 1rem; }
+            .results-scroll { max-height: 50vh; }
+            .state-toggle-grid { gap: 4px; }
+            .state-btn { font-size: 0.8rem; padding: 4px 8px; }
+            .legend { gap: 6px; }
+            .legend-item { font-size: 0.75rem; }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 { font-size: 1.2rem; }
+            .site-nav a { padding: 7px 8px; font-size: 0.78rem; letter-spacing: 0.5px; }
+            .ed-label { font-size: 0.78rem; }
+            .state-btn { font-size: 0.75rem; padding: 3px 7px; }
+            .tool-banner-label { font-size: 0.95rem; letter-spacing: 1px; }
         }
     </style>
 </head>

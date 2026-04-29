@@ -284,6 +284,52 @@
             0%   { transform: translate3d(0, 0, 0); }
             100% { transform: translate3d(-50%, 0, 0); }
         }
+
+        /* Site Navigation */
+        .site-nav {
+            display: flex; margin-bottom: 1.5rem; flex-wrap: wrap;
+            border: 1px solid var(--ed-orange-dim); border-bottom: 2px solid var(--ed-orange);
+            background: rgba(0,0,0,0.5); width: fit-content;
+        }
+        .site-nav a {
+            display: block; padding: 8px 22px; color: var(--ed-orange);
+            text-decoration: none; font-weight: 700; font-size: 1rem; letter-spacing: 2px;
+            opacity: 0.55; border-right: 1px solid var(--ed-orange-dim); transition: all 0.2s;
+            text-transform: uppercase;
+        }
+        .site-nav a:last-child { border-right: none; }
+        .site-nav a:hover { opacity: 1; background: var(--ed-orange-dim); }
+        .site-nav a.active {
+            opacity: 1; color: var(--ed-cyan); background: rgba(0,229,255,0.07);
+            text-shadow: 0 0 6px rgba(0,229,255,0.3);
+            border-bottom: 2px solid var(--ed-cyan); margin-bottom: -2px;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            .header { flex-direction: column; align-items: flex-start; gap: 4px; }
+            .header h1 { font-size: 1.5rem; letter-spacing: 1px; }
+            .header > div:last-child { display: none; }
+            .site-nav { width: 100%; }
+            .site-nav a { padding: 8px 12px; font-size: 0.88rem; letter-spacing: 1px; flex: 1; text-align: center; }
+            .ticker-wrap { margin-bottom: 1.25rem; }
+            .ticker-header { padding: 0 10px; font-size: 0.8rem; letter-spacing: 1px; }
+            .ticker-item { font-size: 0.9rem; }
+            .panel-header { padding: 0.6rem 1rem; }
+            .panel-header h2 { font-size: 1.1rem; letter-spacing: 1px; }
+            .panel-content { padding: 1rem; }
+            .sys-nav button { font-size: 0.85rem; padding: 4px 8px; }
+            .sys-name { font-size: 1.2rem; }
+            .tab-pane { max-height: 60vh; }
+            .body-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 { font-size: 1.2rem; }
+            .site-nav a { padding: 7px 8px; font-size: 0.78rem; letter-spacing: 0.5px; }
+            .ticker-header { font-size: 0.72rem; letter-spacing: 0.5px; }
+        }
     </style>
 </head>
 <body>
@@ -301,10 +347,10 @@
             </div>
         </header>
 
-        <nav style="display:flex;gap:0;margin-bottom:1.5rem;border:1px solid var(--ed-orange-dim);border-bottom:2px solid var(--ed-orange);background:rgba(0,0,0,0.5);width:fit-content;">
-            <a href="/WOSC/" style="display:block;padding:8px 22px;color:var(--ed-cyan);text-decoration:none;font-weight:700;font-size:1rem;letter-spacing:2px;opacity:1;border-right:1px solid var(--ed-orange-dim);text-transform:uppercase;background:rgba(0,229,255,0.07);text-shadow:0 0 6px rgba(0,229,255,0.3);border-bottom:2px solid var(--ed-cyan);margin-bottom:-2px;">&#9632; DASHBOARD</a>
-            <a href="/WOSC/neighborhood/" style="display:block;padding:8px 22px;color:var(--ed-orange);text-decoration:none;font-weight:700;font-size:1rem;letter-spacing:2px;opacity:0.55;border-right:1px solid var(--ed-orange-dim);text-transform:uppercase;transition:all 0.2s;" onmouseover="this.style.opacity='1';this.style.background='var(--ed-orange-dim)'" onmouseout="this.style.opacity='0.55';this.style.background='transparent'">&#9670; LOCAL NEIGHBORHOOD</a>
-            <a href="/WOSC/bgs-tools/" style="display:block;padding:8px 22px;color:var(--ed-orange);text-decoration:none;font-weight:700;font-size:1rem;letter-spacing:2px;opacity:0.55;text-transform:uppercase;transition:all 0.2s;" onmouseover="this.style.opacity='1';this.style.background='var(--ed-orange-dim)'" onmouseout="this.style.opacity='0.55';this.style.background='transparent'">&#9670; BGS TOOLS</a>
+        <nav class="site-nav">
+            <a href="/WOSC/" class="active">&#9632; DASHBOARD</a>
+            <a href="/WOSC/neighborhood/">&#9670; LOCAL NEIGHBORHOOD</a>
+            <a href="/WOSC/bgs-tools/">&#9670; BGS TOOLS</a>
         </nav>
 
         <div class="ticker-wrap">
