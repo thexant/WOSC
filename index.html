@@ -330,6 +330,15 @@
             .site-nav a { padding: 7px 8px; font-size: 0.78rem; letter-spacing: 0.5px; }
             .ticker-header { font-size: 0.72rem; letter-spacing: 0.5px; }
         }
+
+        .copy-sys-btn {
+            background: transparent; border: 1px solid rgba(0,229,255,0.2); color: var(--ed-cyan);
+            font-family: 'Rajdhani', sans-serif; font-size: 0.7rem; font-weight: 700;
+            padding: 1px 5px; cursor: pointer; opacity: 0.4; transition: all 0.2s;
+            line-height: 1.4; vertical-align: middle; flex-shrink: 0;
+        }
+        .copy-sys-btn:hover { opacity: 0.9; border-color: var(--ed-cyan); box-shadow: 0 0 5px var(--ed-cyan-dim); }
+        .copy-sys-btn.copied { opacity: 1; color: var(--success); border-color: var(--success); }
     </style>
 </head>
 <body>
@@ -470,14 +479,32 @@
         }
 
         // ─── SYSTEM NAV ──────────────────────────────────────────────────────
+        function copySystem(name, btn) {
+            navigator.clipboard.writeText(name).then(() => {
+                btn.textContent = '✓ OK';
+                btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = '⧉'; btn.classList.remove('copied'); }, 1400);
+            }).catch(() => {
+                const ta = document.createElement('textarea');
+                ta.value = name; ta.style.cssText = 'position:fixed;opacity:0;';
+                document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+                btn.textContent = '✓ OK'; btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = '⧉'; btn.classList.remove('copied'); }, 1400);
+            });
+        }
+
         function renderSysNav() {
             const sys = COLONIZED_SYSTEMS[currentSystemIndex];
+            const safeReal = sys.realName.replace(/"/g, '&quot;');
             document.getElementById('sys-nav-container').innerHTML = `
                 <div class="sys-nav">
                     <button onclick="changeSystem(-1)">&#9668; PREV</button>
                     <div class="sys-name-container">
                         <div class="sys-name">${sys.nickName}</div>
-                        ${sys.realName !== sys.nickName ? `<div class="sys-subtitle">${sys.realName}</div>` : ''}
+                        <div style="display:flex;align-items:center;gap:5px;justify-content:center;margin-top:2px;">
+                            ${sys.realName !== sys.nickName ? `<div class="sys-subtitle">${sys.realName}</div>` : ''}
+                            <button class="copy-sys-btn" data-sysname="${safeReal}" onclick="copySystem(this.dataset.sysname,this)" title="Copy system name to clipboard">&#10697;</button>
+                        </div>
                     </div>
                     <button onclick="changeSystem(1)">NEXT &#9658;</button>
                 </div>`;

@@ -248,6 +248,15 @@
             .state-btn { font-size: 0.75rem; padding: 3px 7px; }
             .tool-banner-label { font-size: 0.95rem; letter-spacing: 1px; }
         }
+
+        .copy-sys-btn {
+            background: transparent; border: 1px solid rgba(0,229,255,0.2); color: var(--ed-cyan);
+            font-family: 'Rajdhani', sans-serif; font-size: 0.7rem; font-weight: 700;
+            padding: 1px 5px; cursor: pointer; opacity: 0.4; transition: all 0.2s;
+            line-height: 1.4; vertical-align: middle; flex-shrink: 0;
+        }
+        .copy-sys-btn:hover { opacity: 0.9; border-color: var(--ed-cyan); box-shadow: 0 0 5px var(--ed-cyan-dim); }
+        .copy-sys-btn.copied { opacity: 1; color: var(--success); border-color: var(--success); }
     </style>
 </head>
 <body>
@@ -612,9 +621,10 @@
                             let systemHtml = `
                                 <div class="op-card type-bgs" style="animation:fadeIn 0.5s ease-out;margin-bottom:15px;">
                                     <div class="op-header" style="border-bottom:1px solid var(--ed-orange-dim);padding-bottom:8px;margin-bottom:10px;">
-                                        <span class="op-title">
+                                        <span class="op-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                                             <span class="op-type-tag" style="color:var(--ed-orange);border-color:var(--ed-orange)">BGS HIT</span>
                                             ${sys.name}
+                                            <button class="copy-sys-btn" data-sysname="${sys.name.replace(/"/g,'&quot;')}" onclick="copySystem(this.dataset.sysname,this)" title="Copy system name to clipboard">&#10697;</button>
                                         </span>
                                         <span class="op-status" style="background:var(--ed-orange);color:var(--bg-dark);">${sys.distance.toFixed(2)} Ly</span>
                                     </div>`;
@@ -697,6 +707,20 @@
                         NO FACTIONS EXPERIENCING SELECTED STATES FOUND WITHIN ${document.getElementById('bgsRadius').value} LY.
                     </div>`;
             }
+        }
+
+        function copySystem(name, btn) {
+            navigator.clipboard.writeText(name).then(() => {
+                btn.textContent = '✓ OK';
+                btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = '⧉'; btn.classList.remove('copied'); }, 1400);
+            }).catch(() => {
+                const ta = document.createElement('textarea');
+                ta.value = name; ta.style.cssText = 'position:fixed;opacity:0;';
+                document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+                btn.textContent = '✓ OK'; btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = '⧉'; btn.classList.remove('copied'); }, 1400);
+            });
         }
 
         document.addEventListener('DOMContentLoaded', () => {

@@ -78,7 +78,7 @@ const OPERATIONS = [
 			desc: "Deliver required construction materials to various construction sites in our colonized systems.",
 			location: "WOSC Colonized Systems",
 			contact: "CMDR Vetaso",
-			progress: { source: "manual", target: 13, unit: " Construction Sites", faction: "WOSC", current: 0, lowerIsBetter: false, start: 0 },
+			progress: { source: "manual", target: 15, unit: " Construction Sites", faction: "WOSC", current: 3, lowerIsBetter: false, start: 0 },
 		},
 		
 		
