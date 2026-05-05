@@ -343,8 +343,7 @@
                 grid.innerHTML = galleryImages.map((img, i) => `
                     <div class="gallery-item" onclick="openLightbox(${i})" role="button" tabindex="0"
                          onkeydown="if(event.key==='Enter'||event.key===' ')openLightbox(${i})">
-                        <img src="${img.download_url}" alt="${img.name}" loading="lazy">
-                        <div class="gallery-item-label">${img.name}</div>
+                        <img src="${img.download_url}" alt="" loading="lazy">
                     </div>`).join('');
 
             } catch (err) {
@@ -371,7 +370,7 @@
             const el      = document.getElementById('lightbox-img');
             el.src        = img.download_url;
             el.alt        = img.name;
-            document.getElementById('lightbox-caption').textContent  = img.name;
+            document.getElementById('lightbox-caption').textContent  = '';
             document.getElementById('lightbox-counter').textContent  = `${index + 1} / ${galleryImages.length}`;
         }
 
